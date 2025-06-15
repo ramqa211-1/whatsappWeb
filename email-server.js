@@ -62,20 +62,16 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
                 filename: file.originalname || 'uploaded_file'
             });
         } else {
-            const fallbackFilePath = path.resolve(__dirname, 'Solving_Locator_Instability.docx');
-            attachments.push({
-                path: fallbackFilePath,
-                filename: 'Solving_Locator_Instability.docx'
-            });
-            console.warn("⚠️ No file received. Using fallback:", fallbackFilePath);
+            console.warn("⚠️ No file received. Sending email without attachment.");
         }
+
 
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: to || 'ramvt2@gmail.com',
             subject: subject || 'No Subject Provided',
             text: text || 'No message provided.',
-            attachments
+            ...(attachments.length > 0 ? { attachments } : {}) // ✅ כך עושים את זה נכון
         };
 
         await transporter.sendMail(mailOptions);
