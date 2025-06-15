@@ -47,12 +47,6 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
         if (file) console.log('📎 File received:', file.originalname);
         else console.log('📎 No file received');
 
-        // 🚫 Block if text is missing
-        if (!text || typeof text !== 'string' || text.trim() === '') {
-            console.warn('⛔ Email blocked: invalid or empty text field');
-            console.log('📛 Raw body content:', JSON.stringify(req.body, null, 2));
-            return res.status(400).send("Email body (text) is required and cannot be empty.");
-        }
 
         const attachments = [];
         if (file && file.path) {
@@ -62,12 +56,13 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
             });
         }
 
+        const textValue = typeof text === 'string' ? text : '';
+
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: to || 'ramvt2@gmail.com',
-            subject: subject?.trim() || `Email from GPT'S Email Agent at ${new Date().toLocaleString()}`,
-
-            text: text,
+            subject: `=?UTF-8?B?${Buffer.from(subject || `Email from GPT'S Email Agent at ${new Date().toLocaleString()}`).toString('base64')}?=`,
+            text: textValue,
             ...(attachments.length > 0 ? { attachments } : {})
         };
 
