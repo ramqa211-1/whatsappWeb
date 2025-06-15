@@ -48,8 +48,9 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
         else console.log('📎 No file received');
 
         // 🚫 Block if text is missing
-        if (!text || text.trim() === '') {
-            console.warn('⛔ Email blocked: text field is empty');
+        if (!text || typeof text !== 'string' || text.trim() === '') {
+            console.warn('⛔ Email blocked: invalid or empty text field');
+            console.log('📛 Raw body content:', JSON.stringify(req.body, null, 2));
             return res.status(400).send("Email body (text) is required and cannot be empty.");
         }
 
