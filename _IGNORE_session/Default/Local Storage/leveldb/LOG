@@ -1,6 +1,0 @@
-2025/06/10-13:27:25.302 6050 Reusing MANIFEST C:\Users\RamWalastal\WebstormProjects\whatsappWeb\_IGNORE_session\Default\Local Storage\leveldb/MANIFEST-000001
-2025/06/10-13:27:25.322 6050 Recovering log #20
-2025/06/10-13:27:25.324 6050 Reusing old log C:\Users\RamWalastal\WebstormProjects\whatsappWeb\_IGNORE_session\Default\Local Storage\leveldb/000020.log 
-2025/06/10-14:31:57.171 6050 Level-0 table #24: started
-2025/06/10-14:31:57.179 6050 Level-0 table #24: 16342 bytes OK
-2025/06/10-14:31:57.182 6050 Delete type=0 #20

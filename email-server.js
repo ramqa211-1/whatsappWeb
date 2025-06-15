@@ -14,6 +14,14 @@ const pool = new Pool({
     }
 });
 
+pool.query('SELECT NOW()')
+    .then(res => {
+        console.log('📦 DB Connected at:', res.rows[0].now);
+    })
+    .catch(err => {
+        console.error('❌ DB Connection Failed:', err);
+    });
+
 const app = express();
 const port = process.env.PORT || 3001;
 
