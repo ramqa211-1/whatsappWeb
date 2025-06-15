@@ -1,0 +1,21 @@
+{
+  "name": "whatsappweb",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@open-wa/wa-automate": "^4.76.0",
+    "axios": "^1.9.0",
+    "dotenv": "^16.5.0",
+    "express": "^4.21.2",
+    "multer": "^2.0.1",
+    "nodemailer": "^7.0.3"
+  }
+}

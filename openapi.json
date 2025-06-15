@@ -1,0 +1,59 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Email Sender API",
+    "version": "1.0.0",
+    "description": "API for sending emails with attachments"
+  },
+  "servers": [
+    {
+      "url": "https://0f20-188-120-135-160.ngrok-free.app"
+    }
+  ],
+  "paths": {
+    "/send-email": {
+      "post": {
+        "summary": "Send email with attachment",
+        "operationId": "sendEmail",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "to": {
+                    "type": "string",
+                    "description": "Recipient email address"
+                  },
+                  "subject": {
+                    "type": "string",
+                    "description": "Email subject"
+                  },
+                  "text": {
+                    "type": "string",
+                    "description": "Email body"
+                  },
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File to send"
+                  }
+                },
+                "required": ["to", "file"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Email sent successfully"
+          },
+          "500": {
+            "description": "Failed to send email"
+          }
+        }
+      }
+    }
+  }
+}
