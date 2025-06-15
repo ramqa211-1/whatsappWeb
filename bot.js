@@ -6,7 +6,6 @@ create({
     headless: true,
     authTimeout: 60, // זמן לחכות להזדהות
     qrRefreshS: 15, // רענון QR כל 15 שניות
-    useChrome: true,
     killProcessOnBrowserClose: true,
     popup: true, // ✅ מאפשר לפתוח ממשק ב־localhost:3000/qr
     cacheEnabled: false
