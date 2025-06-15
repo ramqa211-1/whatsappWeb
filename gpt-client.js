@@ -1,5 +1,8 @@
 require('dotenv').config();
 const { OpenAI } = require('openai');
+const fs = require('fs');
+const fetch = require('node-fetch');
+const FormData = require('form-data');
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -21,7 +24,9 @@ const functions = [
 ];
 
 (async () => {
-    const userPrompt = "Use the send_file_to_email function to send ./Solving_Locator_Instability.docx to ramvt2@gmail.com. Subject: Locator Doc. Text: Here is the file.";
+    const userPrompt = `
+Send an email to ramvt2@gmail.com with subject: "Test from my email agent" and text: "If you're seeing this, everything works perfectly. No file required anymore."
+`;
 
     const response = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -37,16 +42,30 @@ const functions = [
         const args = JSON.parse(fnCall.arguments);
         console.log("📤 Would send file with:", args);
 
-        // You can now call your local server:
-        const fetch = require('node-fetch');
-        const FormData = require('form-data');
-        const fs = require('fs');
+        // ✅ שינוי 1 – ולידציה לטקסט
+        const safeText = args.text && args.text.trim() !== "" ? args.text : null;
+        if (!safeText) {
+            console.error("❌ Email body (text) is required. Aborting.");
+            return;
+        }
 
         const form = new FormData();
+
+        // ✅ שינוי 2 – ודא נמען
         form.append('to', args.to);
-        form.append('subject', args.subject || 'File from GPT');
-        form.append('text', args.text || 'Here is your file!');
-        form.append('file', fs.createReadStream(args.filePath));
+
+        // ✅ שינוי 3 – ודא subject תקין
+        form.append('subject', args.subject && args.subject.trim() !== "" ? args.subject : 'File from GPT');
+
+        // ✅ שינוי 4 – ודא text לא ריק
+        form.append('text', safeText);
+
+        // ✅ שינוי 5 – בדוק אם קובץ קיים
+        if (args.filePath && fs.existsSync(args.filePath)) {
+            form.append('file', fs.createReadStream(args.filePath));
+        } else {
+            console.warn("⚠️ No valid file path provided. Sending email without attachment.");
+        }
 
         const res = await fetch('http://localhost:3001/send-email', {
             method: 'POST',
