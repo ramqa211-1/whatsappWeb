@@ -9,7 +9,12 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
+// 👇 הוספת שני הפארסרים החשובים:
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
 const upload = multer({ dest: 'uploads/' });
+
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',

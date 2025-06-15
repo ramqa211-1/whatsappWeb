@@ -5,6 +5,8 @@ html-report/
 
 node_modules
 
+_IGNORE_session
+
 # AI helper files
 /ai-code-style/
 
