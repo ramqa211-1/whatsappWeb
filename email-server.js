@@ -64,7 +64,8 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
         const mailOptions = {
             from: process.env.EMAIL_USER,
             to: to || 'ramvt2@gmail.com',
-            subject: subject || 'No Subject Provided',
+            subject: subject?.trim() || `Email from GPT'S Email Agent at ${new Date().toLocaleString()}`,
+
             text: text,
             ...(attachments.length > 0 ? { attachments } : {})
         };
