@@ -3,8 +3,16 @@ const nodemailer = require('nodemailer');
 const multer = require('multer');
 const path = require('path');
 const dotenv = require('dotenv');
+const { Pool } = require('pg');
 
 dotenv.config();
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -65,9 +73,32 @@ app.post('/send-email', upload.single('file'), async (req, res) => {
         await transporter.sendMail(mailOptions);
         console.log("✅ Email sent!");
         res.status(200).send('Email sent ✅');
+
+        await pool.query(
+            'INSERT INTO email_logs (recipient, subject, success, sent_at) VALUES ($1, $2, $3, NOW())',
+            [to, subject, true]
+        );
+
     } catch (err) {
         console.error('❌ Error sending email:', err);
         res.status(500).send('Failed to send email');
+
+        await pool.query(
+            'INSERT INTO email_logs (recipient, subject, success, sent_at) VALUES ($1, $2, $3, NOW())',
+            [req.body?.to || 'unknown', req.body?.subject || '', false]
+        );
+    }
+});
+
+app.get('/logs', async (req, res) => {
+    try {
+        const result = await pool.query(
+            'SELECT * FROM email_logs ORDER BY sent_at DESC LIMIT 100'
+        );
+        res.status(200).json(result.rows);
+    } catch (err) {
+        console.error('❌ Failed to fetch email logs:', err);
+        res.status(500).send('Failed to fetch email logs');
     }
 });
 
