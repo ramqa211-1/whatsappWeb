@@ -11,10 +11,10 @@ COPY package*.json ./
 RUN npm install --only=production
 
 # Install missing dependencies for open-wa without full Chrome
+# ✅ הוספה קריטית לפתרון התקלה
 RUN apt-get update && apt-get install -y \
   libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libxcomposite1 \
-  libxdamage1 libxrandr2 libgbm1 libasound2 libxshmfence1 \
-  libxfixes3 \  # ✅ הוספה קריטית לפתרון התקלה
+  libxdamage1 libxrandr2 libgbm1 libasound2 libxshmfence1 libxfixes3 \
   wget curl unzip && \
   apt-get clean && rm -rf /var/lib/apt/lists/*
 
