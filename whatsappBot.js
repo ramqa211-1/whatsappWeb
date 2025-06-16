@@ -1,5 +1,6 @@
 const { create } = require('@open-wa/wa-automate');
 const axios = require('axios');
+const chromium = require("chromium");
 
 create({
     qrTimeout: 0, // אל תפסיק את יצירת ה-QR
@@ -9,6 +10,7 @@ create({
     chromiumArgs: ['--no-sandbox', '--disable-setuid-sandbox'],
     useChrome: true,
     browserWS: '',
+    executablePath: chromium.path,
     killProcessOnBrowserClose: true,
     popup: true, // ✅ מאפשר לפתוח ממשק ב־localhost:3000/qr
     cacheEnabled: false
