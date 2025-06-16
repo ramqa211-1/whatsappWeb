@@ -7,7 +7,7 @@ create({
     authTimeout: 60, // זמן לחכות להזדהות
     qrRefreshS: 15, // רענון QR כל 15 שניות
     chromiumArgs: ['--no-sandbox', '--disable-setuid-sandbox'],
-    useChrome: false,
+    useChrome: true,
     browserWS: '',
     killProcessOnBrowserClose: true,
     popup: true, // ✅ מאפשר לפתוח ממשק ב־localhost:3000/qr
