@@ -31,4 +31,4 @@ COPY . .
 RUN npm install
 
 # הפעלת האפליקציה
-CMD ["node", "whatsappBot.js"]
+CMD ["npm", "run", "start"]
