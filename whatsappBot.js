@@ -1,16 +1,23 @@
 const wppconnect = require('@wppconnect-team/wppconnect');
 const axios = require('axios');
 const fs = require('fs');
+const path = require('path');
+
+// שימוש בתיקיות שיש לנו הרשאות עליהן
 const sessionPath = '/tmp/wpp-session';
+const tokensPath = '/tmp/tokens'; // שינוי מ-/app/tokens ל-/tmp/tokens
 const sessionFile = `${sessionPath}/default/session.default.json`;
 
 console.log('🚀 Starting WhatsApp bot setup');
 
 try {
+    // יצירת תיקיות אם הן לא קיימות
     fs.mkdirSync(`${sessionPath}/default`, { recursive: true });
+    fs.mkdirSync(tokensPath, { recursive: true });
     console.log(`📁 Session directory ensured at: ${sessionPath}/default`);
+    console.log(`📁 Tokens directory ensured at: ${tokensPath}`);
 } catch (err) {
-    console.error('❌ Failed to create session directory:', err);
+    console.error('❌ Failed to create directories:', err);
 }
 
 if (fs.existsSync(sessionFile)) {
@@ -24,6 +31,7 @@ console.log('🔧 Initializing wppconnect...');
 wppconnect.create({
     session: 'default',
     sessionPath,
+    browserSessionTokenDir: tokensPath, // שימוש בתיקייה החדשה
     catchQR: (base64Qrimg, asciiQR) => {
         console.log('🔑 QR CODE GENERATED — SCAN IT:\n', asciiQR);
     },
@@ -37,9 +45,25 @@ wppconnect.create({
         '--disable-accelerated-2d-canvas',
         '--no-zygote',
         '--single-process',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor'
     ],
-    browserSessionTokenDir: `${sessionPath}/default`
+    // הוספת הגדרות נוספות עבור Railway
+    puppeteerOptions: {
+        userDataDir: tokensPath,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-zygote',
+            '--single-process',
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor'
+        ]
+    }
 })
     .then((client) => {
         console.log('🤖 WhatsApp client is ready and listening...');
@@ -65,4 +89,5 @@ wppconnect.create({
     })
     .catch((error) => {
         console.error('❌ Failed to initialize WhatsApp client:', error);
+        process.exit(1);
     });
