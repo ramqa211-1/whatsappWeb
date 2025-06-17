@@ -2,16 +2,14 @@ FROM ghcr.io/puppeteer/puppeteer:latest
 
 WORKDIR /app
 
-# רק קבצים נחוצים להתקנה
-COPY package*.json ./
+# רק קבצים נחוצים להתקנת תלויות
+COPY package.json ./
+RUN npm install
 
-# ודא שההרשאות מספיקות – בלי chown
-RUN chmod -R 755 /app && npm install
+# קוד אפליקציה
+COPY . .
 
-# עכשיו העתק רק את הקוד שאתה צריך
-COPY whatsappBot.js email-server.js ./
-
-# עובר ל־pptruser – שהוא המוגדר בתמונה
+# הפעלה עם המשתמש של Puppeteer (הכל עובד איתו חלק)
 USER pptruser
 
 CMD ["npm", "run", "start"]
