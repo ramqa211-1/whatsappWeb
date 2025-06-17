@@ -2,19 +2,16 @@ FROM ghcr.io/puppeteer/puppeteer:latest
 
 WORKDIR /app
 
-# העתק קבצי package
+# רק קבצים נחוצים להתקנה
 COPY package*.json ./
 
-# תקן הרשאות לפני התקנה
-RUN chown -R root:root /app && chmod -R 755 /app
+# ודא שההרשאות מספיקות – בלי chown
+RUN chmod -R 755 /app && npm install
 
-# התקנה כ-root
-RUN npm install
-
-# העתק שאר הקבצים
+# עכשיו העתק רק את הקוד שאתה צריך
 COPY whatsappBot.js email-server.js ./
 
-# הרץ כ־pptruser
+# עובר ל־pptruser – שהוא המוגדר בתמונה
 USER pptruser
 
 CMD ["npm", "run", "start"]
