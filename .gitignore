@@ -18,6 +18,25 @@ node_modules
 Thumbs.db
 
 
+# זבל של דפדפן (נפח ענק, לא נחוץ)
+tokens/default/**/IndexedDB/
+tokens/default/**/Local Storage/
+tokens/default/**/Service Worker/
+tokens/default/**/GrShaderCache/
+tokens/default/**/GPUCache/
+tokens/default/**/Crashpad/
+tokens/default/**/CertificateRevocation/
+tokens/default/**/MediaFoundationWidevineCdm/
+tokens/default/**/OpenCookieDatabase/
+tokens/default/**/component_crx_cache/
+tokens/default/**/PrivacySandboxAttestationsPreloaded/
+tokens/default/**/AutofillStates/
+tokens/default/**/ZxcvbnData/
+tokens/default/**/DevToolsActivePort
+tokens/default/**/first_party_sets.*
+tokens/default/**/BrowserMetrics*.pma
+tokens/default/**/LOG*
+tokens/default/**/CURRENT
 # Applications
 *.app
 *.exe
