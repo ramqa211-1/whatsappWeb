@@ -4,8 +4,11 @@ const fs = require('fs');
 const sessionPath = '/tmp/wpp-session';
 const sessionFile = `${sessionPath}/default/session.default.json`;
 
+console.log('🚀 Starting WhatsApp bot setup');
+
 try {
     fs.mkdirSync(`${sessionPath}/default`, { recursive: true });
+    console.log(`📁 Session directory ensured at: ${sessionPath}/default`);
 } catch (err) {
     console.error('❌ Failed to create session directory:', err);
 }
@@ -16,8 +19,18 @@ if (fs.existsSync(sessionFile)) {
     console.warn('⚠️ No session token found, will require QR scan');
 }
 
-const puppeteerOptions = {
-    args: [
+console.log('🔧 Initializing wppconnect...');
+
+wppconnect.create({
+    session: 'default',
+    sessionPath,
+    catchQR: (base64Qrimg, asciiQR) => {
+        console.log('🔑 QR CODE GENERATED — SCAN IT:\n', asciiQR);
+    },
+    headless: true,
+    disableWelcome: true,
+    logQR: true,
+    browserArgs: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
@@ -25,34 +38,17 @@ const puppeteerOptions = {
         '--no-zygote',
         '--single-process',
         '--disable-gpu'
-    ]
-};
-
-console.log('🛠 Puppeteer options:', puppeteerOptions);
-
-wppconnect.create({
-    session: 'default',
-    sessionPath,
-    catchQR: (base64Qrimg, asciiQR) => {
-        console.log('🔑 Scan this QR:\n', asciiQR);
-    },
-    headless: true,
-    puppeteerOptions,
-    disableWelcome: true,
-    logQR: true,
-    puppeteer: {
-        userDataDir: `${sessionPath}/default` // <-- זה החלק הקריטי
-    }
+    ],
+    browserSessionTokenDir: `${sessionPath}/default`
 })
-
     .then((client) => {
-        console.log('🤖 WhatsApp client ready');
+        console.log('🤖 WhatsApp client is ready and listening...');
 
         client.onMessage(async (message) => {
-            console.log('📥 New message:', message.body);
+            console.log(`📥 Incoming message from ${message.from}:`, message.body);
 
             if (/docs\.google\.com\/spreadsheets/.test(message.body)) {
-                console.log('📩 Google Sheets link detected, sending to n8n...');
+                console.log('📩 Google Sheets link detected, preparing to forward to n8n...');
                 try {
                     await axios.post('https://primary-production-a35f4.up.railway.app/webhook-test/97866fe6-a0e4-487f-b21e-804701239ab0', {
                         message: message.body,
@@ -60,9 +56,9 @@ wppconnect.create({
                         chatName: message.chat?.name || '',
                         timestamp: message.timestamp,
                     });
-                    console.log('✅ Sent to n8n successfully');
+                    console.log('✅ Message forwarded to n8n successfully');
                 } catch (err) {
-                    console.error('❌ Failed to send to n8n:', err.message);
+                    console.error('❌ Failed to send message to n8n:', err.message);
                 }
             }
         });
