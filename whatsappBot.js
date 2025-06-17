@@ -39,8 +39,12 @@ wppconnect.create({
     headless: true,
     puppeteerOptions,
     disableWelcome: true,
-    logQR: true
+    logQR: true,
+    puppeteer: {
+        userDataDir: `${sessionPath}/default` // <-- זה החלק הקריטי
+    }
 })
+
     .then((client) => {
         console.log('🤖 WhatsApp client ready');
 
