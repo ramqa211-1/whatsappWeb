@@ -2,12 +2,14 @@ FROM ghcr.io/puppeteer/puppeteer:latest
 
 WORKDIR /app
 
-# העתק רק את הקוד הדרוש
+# התקנת תלויות כ-root
 COPY package*.json ./
 RUN npm install
 
+# העתקת שאר הקבצים
 COPY whatsappBot.js email-server.js ./
 
+# רק כאן מחליפים יוזר
 USER pptruser
 
 CMD ["npm", "run", "start"]
