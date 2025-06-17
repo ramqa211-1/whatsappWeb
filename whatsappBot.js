@@ -26,12 +26,34 @@ if (fs.existsSync(sessionFile)) {
     console.warn('⚠️ No session token found, will require QR scan');
 }
 
+// בדיקת נתיבים אפשריים לכרום
+function findChromePath() {
+    const possiblePaths = [
+        '/usr/bin/google-chrome-stable',
+        '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium',
+        '/opt/google/chrome/chrome'
+    ];
+
+    for (const path of possiblePaths) {
+        if (fs.existsSync(path)) {
+            console.log(`✅ Found Chrome at: ${path}`);
+            return path;
+        }
+    }
+
+    console.log('⚠️ Chrome not found in standard locations, using default');
+    return null;
+}
+
+const chromePath = findChromePath();
 console.log('🔧 Initializing wppconnect...');
 
-wppconnect.create({
+const wppOptions = {
     session: 'default',
     sessionPath,
-    browserSessionTokenDir: tokensPath, // שימוש בתיקייה החדשה
+    browserSessionTokenDir: tokensPath,
     catchQR: (base64Qrimg, asciiQR) => {
         console.log('🔑 QR CODE GENERATED — SCAN IT:\n', asciiQR);
     },
@@ -47,9 +69,11 @@ wppconnect.create({
         '--single-process',
         '--disable-gpu',
         '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
+        '--disable-features=VizDisplayCompositor',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding'
     ],
-    // הוספת הגדרות נוספות עבור Railway
     puppeteerOptions: {
         userDataDir: tokensPath,
         args: [
@@ -61,10 +85,21 @@ wppconnect.create({
             '--single-process',
             '--disable-gpu',
             '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
+            '--disable-features=VizDisplayCompositor',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding'
         ]
     }
-})
+};
+
+// הוספת נתיב כרום אם נמצא
+if (chromePath) {
+    wppOptions.executablePath = chromePath;
+    wppOptions.puppeteerOptions.executablePath = chromePath;
+}
+
+wppconnect.create(wppOptions)
     .then((client) => {
         console.log('🤖 WhatsApp client is ready and listening...');
 

@@ -2,11 +2,17 @@ FROM ghcr.io/puppeteer/puppeteer:latest
 
 WORKDIR /app
 
-# יצירת תיקיות עם הרשאות נכונות
+# התקנת Chrome אם הוא לא קיים (כגיבוי)
 USER root
-RUN mkdir -p /tmp/wpp-session /app/tokens && \
-    chown -R pptruser:pptruser /tmp/wpp-session /app/tokens && \
-    chmod -R 755 /tmp/wpp-session /app/tokens
+RUN apt-get update && apt-get install -y \
+    google-chrome-stable || \
+    chromium-browser || \
+    echo "Chrome already installed"
+
+# יצירת תיקיות עם הרשאות נכונות
+RUN mkdir -p /tmp/wpp-session /tmp/tokens && \
+    chown -R pptruser:pptruser /tmp/wpp-session /tmp/tokens && \
+    chmod -R 755 /tmp/wpp-session /tmp/tokens
 
 # העתקת package.json והתקנת תלויות
 COPY package.json ./
