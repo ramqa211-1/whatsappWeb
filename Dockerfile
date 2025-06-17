@@ -23,10 +23,10 @@ RUN groupadd -r appuser && useradd -r -g appuser -G audio,video appuser \
 
 WORKDIR /app
 
-# יצירת תיקיות עם הרשאות נכונות
-RUN mkdir -p /tmp/wpp-session /tmp/tokens && \
-    chown -R appuser:appuser /tmp/wpp-session /tmp/tokens && \
-    chmod -R 755 /tmp/wpp-session /tmp/tokens
+# יצירת תיקיית המידע הקבוע עם הרשאות נכונות
+RUN mkdir -p /app/wpp-data && \
+    chown -R appuser:appuser /app/wpp-data && \
+    chmod -R 755 /app/wpp-data
 
 # העתקת package.json והתקנת תלויות
 COPY package.json ./

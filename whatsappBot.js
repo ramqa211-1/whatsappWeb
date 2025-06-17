@@ -1,12 +1,16 @@
 const wppconnect = require('@wppconnect-team/wppconnect');
 const axios = require('axios');
 const fs = require('fs');
-const path = require('path');
 
 // שימוש בתיקיות שיש לנו הרשאות עליהן
-const sessionPath = '/tmp/wpp-session';
-const tokensPath = '/tmp/tokens'; // שינוי מ-/app/tokens ל-/tmp/tokens
-const sessionFile = `${sessionPath}/default/session.default.json`;
+const path = require('path');
+
+// נתיב אחד קבוע לכל המידע שצריך לשרוד בין הפעלות
+const persistentDataPath = '/app/wpp-data';
+// שינוי כאן: הגדרת sessionPath ו-tokensPath
+const sessionPath = path.join(persistentDataPath, 'session');
+const tokensPath = path.join(persistentDataPath, 'tokens');
+const sessionFile = path.join(sessionPath, 'default', 'session.default.json');
 
 console.log('🚀 Starting WhatsApp bot setup');
 
@@ -50,10 +54,12 @@ function findChromePath() {
 const chromePath = findChromePath();
 console.log('🔧 Initializing wppconnect...');
 
+// *** כאן ממוקם ה-wppOptions המעודכן שלך ***
 const wppOptions = {
     session: 'default',
-    sessionPath,
-    browserSessionTokenDir: tokensPath,
+    // כל המידע יישמר תחת אותו נתיב קבוע
+    sessionPath: path.join(persistentDataPath, 'session'),
+    browserSessionTokenDir: path.join(persistentDataPath, 'tokens'),
     catchQR: (base64Qrimg, asciiQR) => {
         console.log('🔑 QR CODE GENERATED — SCAN IT:\n', asciiQR);
     },
@@ -73,7 +79,8 @@ const wppOptions = {
     ],
     puppeteerOptions: {
         executablePath: chromePath,
-        userDataDir: tokensPath,
+        // גם המידע של המשתמש של הדפדפן יישמר כאן
+        userDataDir: path.join(persistentDataPath, 'tokens'),
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
