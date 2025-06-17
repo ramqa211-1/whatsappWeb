@@ -1,8 +1,14 @@
 const wppconnect = require('@wppconnect-team/wppconnect');
 const axios = require('axios');
 const fs = require('fs');
-const sessionPath = '/tmp/tokens';
+const sessionPath = '/tmp/wpp-session';
 const sessionFile = `${sessionPath}/default/session.default.json`;
+
+try {
+    fs.mkdirSync(`${sessionPath}/default`, { recursive: true });
+} catch (err) {
+    console.error('❌ Failed to create session directory:', err);
+}
 
 if (fs.existsSync(sessionFile)) {
     console.log('✅ Session token found:', sessionFile);
