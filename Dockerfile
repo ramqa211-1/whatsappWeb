@@ -2,12 +2,12 @@ FROM ghcr.io/puppeteer/puppeteer:latest
 
 WORKDIR /app
 
-# התקנת Chrome אם הוא לא קיים (כגיבוי)
 USER root
-RUN apt-get update && apt-get install -y \
-    google-chrome-stable || \
-    chromium-browser || \
-    echo "Chrome already installed"
+
+# התקנת Chromium ווידוא שהוא זמין
+RUN apt-get update && apt-get install -y chromium chromium-browser && \
+    ln -sf /usr/bin/chromium /usr/bin/google-chrome-stable && \
+    ln -sf /usr/bin/chromium /usr/bin/google-chrome
 
 # יצירת תיקיות עם הרשאות נכונות
 RUN mkdir -p /tmp/wpp-session /tmp/tokens && \
@@ -18,12 +18,19 @@ RUN mkdir -p /tmp/wpp-session /tmp/tokens && \
 COPY package.json ./
 RUN npm install
 
+# התקנת Puppeteer browsers
+RUN npx puppeteer browsers install chromium
+
 # העתקת קוד האפליקציה
 COPY . .
 
 # מתן הרשאות לכל הקבצים
 RUN chown -R pptruser:pptruser /app && \
     chmod -R 755 /app
+
+# הגדרת משתני סביבה עבור Puppeteer
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # מעבר למשתמש pptruser
 USER pptruser

@@ -29,21 +29,22 @@ if (fs.existsSync(sessionFile)) {
 // בדיקת נתיבים אפשריים לכרום
 function findChromePath() {
     const possiblePaths = [
+        process.env.PUPPETEER_EXECUTABLE_PATH,
+        '/usr/bin/chromium',
+        '/usr/bin/chromium-browser',
         '/usr/bin/google-chrome-stable',
         '/usr/bin/google-chrome',
-        '/usr/bin/chromium-browser',
-        '/usr/bin/chromium',
         '/opt/google/chrome/chrome'
     ];
 
     for (const path of possiblePaths) {
-        if (fs.existsSync(path)) {
-            console.log(`✅ Found Chrome at: ${path}`);
+        if (path && fs.existsSync(path)) {
+            console.log(`✅ Found Chrome/Chromium at: ${path}`);
             return path;
         }
     }
 
-    console.log('⚠️ Chrome not found in standard locations, using default');
+    console.log('⚠️ Chrome/Chromium not found in standard locations');
     return null;
 }
 
