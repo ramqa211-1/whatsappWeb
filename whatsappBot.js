@@ -29,23 +29,22 @@ if (fs.existsSync(sessionFile)) {
 // בדיקת נתיבים אפשריים לכרום
 function findChromePath() {
     const possiblePaths = [
-        process.env.PUPPETEER_EXECUTABLE_PATH,
-        '/usr/bin/chromium',
-        '/usr/bin/chromium-browser',
         '/usr/bin/google-chrome-stable',
         '/usr/bin/google-chrome',
+        '/usr/bin/chromium-browser',
+        '/usr/bin/chromium',
         '/opt/google/chrome/chrome'
     ];
 
     for (const path of possiblePaths) {
-        if (path && fs.existsSync(path)) {
-            console.log(`✅ Found Chrome/Chromium at: ${path}`);
+        if (fs.existsSync(path)) {
+            console.log(`✅ Found Chrome at: ${path}`);
             return path;
         }
     }
 
-    console.log('⚠️ Chrome/Chromium not found in standard locations');
-    return null;
+    console.log('⚠️ Chrome not found in standard locations');
+    return '/usr/bin/google-chrome-stable'; // default fallback
 }
 
 const chromePath = findChromePath();
@@ -61,44 +60,34 @@ const wppOptions = {
     headless: true,
     disableWelcome: true,
     logQR: true,
+    executablePath: chromePath,
     browserArgs: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-zygote',
-        '--single-process',
         '--disable-gpu',
         '--disable-web-security',
         '--disable-features=VizDisplayCompositor',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding'
+        '--no-zygote',
+        '--single-process'
     ],
     puppeteerOptions: {
+        executablePath: chromePath,
         userDataDir: tokensPath,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-accelerated-2d-canvas',
-            '--no-zygote',
-            '--single-process',
             '--disable-gpu',
             '--disable-web-security',
             '--disable-features=VizDisplayCompositor',
-            '--disable-background-timer-throttling',
-            '--disable-backgrounding-occluded-windows',
-            '--disable-renderer-backgrounding'
+            '--no-zygote',
+            '--single-process'
         ]
     }
 };
 
-// הוספת נתיב כרום אם נמצא
-if (chromePath) {
-    wppOptions.executablePath = chromePath;
-    wppOptions.puppeteerOptions.executablePath = chromePath;
-}
+console.log(`🔧 Using browser: ${chromePath}`);
 
 wppconnect.create(wppOptions)
     .then((client) => {
