@@ -1,6 +1,16 @@
 const wppconnect = require('@wppconnect-team/wppconnect');
 const axios = require('axios');
 
+const fs = require('fs');
+const sessionFile = './tokens/default/session.default.json';
+
+if (fs.existsSync(sessionFile)) {
+    console.log('✅ Session token found:', sessionFile);
+} else {
+    console.warn('⚠️ No session token found, will require QR scan');
+}
+
+
 const puppeteerOptions = {
     args: ['--no-sandbox', '--disable-setuid-sandbox']
 };
@@ -9,6 +19,7 @@ console.log('🛠 Puppeteer options:', puppeteerOptions);
 
 wppconnect.create({
     session: 'default',
+    sessionPath: './tokens',
     catchQR: (base64Qrimg, asciiQR) => {
         console.log('🔑 Scan this QR:\n', asciiQR);
     },

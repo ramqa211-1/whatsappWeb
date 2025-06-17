@@ -18,18 +18,6 @@ node_modules
 Thumbs.db
 
 
-# Exclude all _IGNORE_session contents by default
-_IGNORE_session/*
-
-# ✅ But include all files inside "Default" for WA session
-!_IGNORE_session/Default/
-!_IGNORE_session/Default/**
-!_IGNORE_session/DevToolsActivePort
-
-# Optional: allow any folder that contains essential state data
-!_IGNORE_session/DevToolsActivePort
-
-
 # Applications
 *.app
 *.exe
