@@ -12,7 +12,15 @@ if (fs.existsSync(sessionFile)) {
 
 
 const puppeteerOptions = {
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+    args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-zygote',
+        '--single-process',
+        '--disable-gpu'
+    ]
 };
 
 console.log('🛠 Puppeteer options:', puppeteerOptions);
