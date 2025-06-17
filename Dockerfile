@@ -40,6 +40,6 @@ RUN chown -R appuser:appuser /app && \
     chmod -R 755 /app
 
 # מעבר למשתמש appuser
-USER appuser
+# USER appuser   <-- מבטל את זה זמנית, שירוץ כ-root
 
 CMD ["npm", "run", "start"]
