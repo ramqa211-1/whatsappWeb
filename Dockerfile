@@ -1,11 +1,13 @@
 FROM ghcr.io/puppeteer/puppeteer:latest
 
 WORKDIR /app
-COPY . .
-RUN chown -R pptruser:pptruser /app
+
+# העתק רק את הקוד הדרוש
+COPY package*.json ./
+RUN npm install
+
+COPY whatsappBot.js email-server.js ./
 
 USER pptruser
-
-RUN npm install
 
 CMD ["npm", "run", "start"]
