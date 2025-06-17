@@ -1,15 +1,21 @@
 const wppconnect = require('@wppconnect-team/wppconnect');
 const axios = require('axios');
 
+const puppeteerOptions = {
+    args: ['--no-sandbox', '--disable-setuid-sandbox']
+};
+
+console.log('🛠 Puppeteer options:', puppeteerOptions);
+
 wppconnect.create({
     session: 'default',
     catchQR: (base64Qrimg, asciiQR) => {
         console.log('🔑 Scan this QR:\n', asciiQR);
     },
     headless: true,
-    puppeteerOptions: {}, // ריק – בלי Chromium
+    puppeteerOptions,
     disableWelcome: true,
-    logQR: true,
+    logQR: true
 })
     .then((client) => {
         console.log('🤖 WhatsApp client ready');
