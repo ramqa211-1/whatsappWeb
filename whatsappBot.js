@@ -1,6 +1,9 @@
 const wppconnect = require('@wppconnect-team/wppconnect');
 const axios = require('axios');
 const fs = require('fs');
+const QRCode = require('qrcode'); // ⬅️ חובה להוסיף
+const nodemailer = require('nodemailer');
+
 
 // שימוש בתיקיות שיש לנו הרשאות עליהן
 const path = require('path');
@@ -54,6 +57,37 @@ function findChromePath() {
     return '/usr/bin/google-chrome-stable'; // default fallback
 }
 
+async function sendQrToEmail(filePath) {
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: process.env.EMAIL_USER, // כתובת השולח (חייב לאפשר "less secure apps" או להשתמש בסיסמה לאפליקציות)
+            pass: process.env.EMAIL_PASS // שים את הסיסמה בקובץ .env
+        }
+    });
+
+    const mailOptions = {
+        from: '"WhatsApp Bot" <ramvt2@gmail.com>',
+        to: 'ramvt2@gmail.com',
+        subject: '🔑 WhatsApp QR Code',
+        text: 'מצורפת תמונת QR לסריקה והתחברות',
+        attachments: [
+            {
+                filename: 'qr_code.png',
+                path: filePath
+            }
+        ]
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log('📧 QR code sent to email successfully');
+    } catch (error) {
+        console.error('❌ Failed to send email:', error);
+    }
+}
+
+
 const chromePath = findChromePath();
 console.log('🔧 Initializing wppconnect...');
 
@@ -63,16 +97,17 @@ const wppOptions = {
     // כל המידע יישמר תחת אותו נתיב קבוע
     sessionPath: sessionDir, // מצביע לתיקייה החדשה
     browserSessionTokenDir: tokensDir, // אפשר להשאיר את זה כך או להפנות ל-sessionDir
-    catchQR: (base64Qrimg, asciiQR) => {
-        console.log('🔑 QR CODE GENERATED — SCAN IT:\n', asciiQR); // עדיין מדפיס ללוג
+    catchQR: async (base64Qrimg, asciiQR) => {
+        console.log('🔑 QR CODE GENERATED — SCAN IT:\n', asciiQR);
 
-        // יצירת קובץ QR מקוד ה-Base64
-        const qrImagePath = path.join(persistentDataPath, 'qr_code.png');
-        const imageBuffer = Buffer.from(base64Qrimg.replace('data:image/png;base64,', ''), 'base64');
-        fs.writeFileSync(qrImagePath, imageBuffer);
-        console.log(`🖼️ QR code image saved to: ${qrImagePath}`);
-        // ייתכן שתרצה גם לשלוח את התמונה למקום נגיש, למשל שרת אימג'ים, כדי שתוכל לגשת אליה מחוץ ל-Railway
+        const rawPath = path.join(persistentDataPath, 'qr_code.png');
+        const rawBuffer = Buffer.from(base64Qrimg.replace('data:image/png;base64,', ''), 'base64');
+        fs.writeFileSync(rawPath, rawBuffer);
+        console.log(`🖼️ QR code saved to: ${rawPath}`);
+
+        await sendQrToEmail(rawPath);
     },
+    
     headless: true,
     disableWelcome: true,
     logQR: true,
