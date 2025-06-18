@@ -64,7 +64,14 @@ const wppOptions = {
     sessionPath: sessionDir, // מצביע לתיקייה החדשה
     browserSessionTokenDir: tokensDir, // אפשר להשאיר את זה כך או להפנות ל-sessionDir
     catchQR: (base64Qrimg, asciiQR) => {
-        console.log('🔑 QR CODE GENERATED — SCAN IT:\n', asciiQR);
+        console.log('🔑 QR CODE GENERATED — SCAN IT:\n', asciiQR); // עדיין מדפיס ללוג
+
+        // יצירת קובץ QR מקוד ה-Base64
+        const qrImagePath = path.join(persistentDataPath, 'qr_code.png');
+        const imageBuffer = Buffer.from(base64Qrimg.replace('data:image/png;base64,', ''), 'base64');
+        fs.writeFileSync(qrImagePath, imageBuffer);
+        console.log(`🖼️ QR code image saved to: ${qrImagePath}`);
+        // ייתכן שתרצה גם לשלוח את התמונה למקום נגיש, למשל שרת אימג'ים, כדי שתוכל לגשת אליה מחוץ ל-Railway
     },
     headless: true,
     disableWelcome: true,
