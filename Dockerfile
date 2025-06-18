@@ -24,9 +24,10 @@ RUN groupadd -r appuser && useradd -r -g appuser -G audio,video appuser \
 WORKDIR /app
 
 # יצירת תיקיית המידע הקבוע עם הרשאות נכונות
+# שימו לב לשינוי ההרשאות ל-777 (לצורך בדיקה ראשונית, ניתן לצמצם בהמשך)
 RUN mkdir -p /app/wpp-data && \
     chown -R appuser:appuser /app/wpp-data && \
-    chmod -R 755 /app/wpp-data
+    chmod -R 777 /app/wpp-data
 
 # העתקת package.json והתקנת תלויות
 COPY package.json ./
@@ -35,7 +36,7 @@ RUN npm install && npm cache clean --force
 # העתקת קוד האפליקציה
 COPY . .
 
-# מתן הרשאות לכל הקבצים
+# מתן הרשאות לכל הקבצים (ודא שגם ל-/app יש הרשאות עבור appuser)
 RUN chown -R appuser:appuser /app && \
     chmod -R 755 /app
 

@@ -7,25 +7,28 @@ const path = require('path');
 
 // נתיב אחד קבוע לכל המידע שצריך לשרוד בין הפעלות
 const persistentDataPath = '/app/wpp-data';
-// שינוי כאן: הגדרת sessionPath ו-tokensPath
-const sessionPath = path.join(persistentDataPath, 'session');
-const tokensPath = path.join(persistentDataPath, 'tokens');
-const sessionFile = path.join(sessionPath, 'default', 'session.default.json');
+// שינוי כאן: הגדרת sessionDir ו-tokensDir לנתיבים ברורים יותר
+const sessionDir = path.join(persistentDataPath, 'whatsapp-sessions'); // תיקייה ייעודית ל-session
+const tokensDir = path.join(persistentDataPath, 'tokens'); // אפשר להשאיר את ה-tokens בנפרד אם תרצה, או לשלב אותם
+
+// הערה: אין צורך ב-sessionFile כמשתנה נפרד יותר, הכל יטופל אוטומטית ע"י wppconnect בתוך sessionDir
 
 console.log('🚀 Starting WhatsApp bot setup');
 
 try {
     // יצירת תיקיות אם הן לא קיימות
-    fs.mkdirSync(`${sessionPath}/default`, { recursive: true });
-    fs.mkdirSync(tokensPath, { recursive: true });
-    console.log(`📁 Session directory ensured at: ${sessionPath}/default`);
-    console.log(`📁 Tokens directory ensured at: ${tokensPath}`);
+    fs.mkdirSync(sessionDir, { recursive: true }); // יצירת התיקייה החדשה
+    fs.mkdirSync(tokensDir, { recursive: true });
+    console.log(`📁 Session directory ensured at: ${sessionDir}`);
+    console.log(`📁 Tokens directory ensured at: ${tokensDir}`);
 } catch (err) {
     console.error('❌ Failed to create directories:', err);
 }
 
-if (fs.existsSync(sessionFile)) {
-    console.log('✅ Session token found:', sessionFile);
+// בדיקת קיום session - כעת נבדוק אם יש קבצים כלשהם בתוך תיקיית ה-session
+// דרך קצת יותר כללית לבדוק אם קיים session
+if (fs.existsSync(sessionDir) && fs.readdirSync(sessionDir).length > 0) {
+    console.log('✅ Existing session data found in:', sessionDir);
 } else {
     console.warn('⚠️ No session token found, will require QR scan');
 }
@@ -40,10 +43,10 @@ function findChromePath() {
         '/opt/google/chrome/chrome'
     ];
 
-    for (const path of possiblePaths) {
-        if (fs.existsSync(path)) {
-            console.log(`✅ Found Chrome at: ${path}`);
-            return path;
+    for (const p of possiblePaths) { // שיניתי את שם המשתנה מ-path ל-p כדי למנוע התנגשות
+        if (fs.existsSync(p)) {
+            console.log(`✅ Found Chrome at: ${p}`);
+            return p;
         }
     }
 
@@ -54,12 +57,12 @@ function findChromePath() {
 const chromePath = findChromePath();
 console.log('🔧 Initializing wppconnect...');
 
-// *** כאן ממוקם ה-wppOptions המעודכן שלך ***
+// *** כאן ממוקם ה-wppOptions המעודכן שלך עם הנתיבים החדשים ***
 const wppOptions = {
     session: 'default',
     // כל המידע יישמר תחת אותו נתיב קבוע
-    sessionPath: path.join(persistentDataPath, 'session'),
-    browserSessionTokenDir: path.join(persistentDataPath, 'tokens'),
+    sessionPath: sessionDir, // מצביע לתיקייה החדשה
+    browserSessionTokenDir: tokensDir, // אפשר להשאיר את זה כך או להפנות ל-sessionDir
     catchQR: (base64Qrimg, asciiQR) => {
         console.log('🔑 QR CODE GENERATED — SCAN IT:\n', asciiQR);
     },
@@ -79,8 +82,8 @@ const wppOptions = {
     ],
     puppeteerOptions: {
         executablePath: chromePath,
-        // גם המידע של המשתמש של הדפדפן יישמר כאן
-        userDataDir: path.join(persistentDataPath, 'tokens'),
+        // חשוב מאוד: Puppeteer ישמור כאן את נתוני המשתמש (כולל קבצי ה-session)
+        userDataDir: sessionDir, // מצביע לתיקיית ה-session החדשה
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
