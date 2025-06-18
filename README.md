@@ -1,16 +1,20 @@
-# 📬 WhatsApp Email Relay Server (Express + Railway)
+# 📬 WhatsApp Email Relay + Auto QR Bot (Node.js + Railway)
 
-Node.js microservice שמאזין לבקשות `POST` (למשל מ־n8n) ושולח מיילים עם או בלי קבצים מצורפים דרך Gmail.
-מוכן לפריסה על Railway.
+מערכת שמבצעת התחברות אוטומטית ל־WhatsApp Web באמצעות [WPPConnect](https://github.com/wppconnect-team/wppconnect),  
+שולחת QR קוד למייל כשצריך לסרוק,  
+**וגם שולחת מייל התחברות אוטומטי בכל Deploy כדי לוודא שהבוט אכן מחובר.**
+
+מוכן לפריסה ב־Railway או הפעלה מקומית.
 
 ---
 
 ## 🚀 איך משתמשים
 
 ### 1. 🧰 התקנת תלויות מקומית
+
 ```bash
 npm install
-```
+
 
 ### 2. 🛠 צור קובץ `.env` (לא יועלה ל־git)
 ```env

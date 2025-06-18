@@ -57,31 +57,29 @@ function findChromePath() {
     return '/usr/bin/google-chrome-stable'; // default fallback
 }
 
-async function sendQrToEmail(filePath) {
+async function sendQrToEmail(filePath = null, override = {}) {
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
-            user: process.env.EMAIL_USER, // כתובת השולח (חייב לאפשר "less secure apps" או להשתמש בסיסמה לאפליקציות)
-            pass: process.env.EMAIL_PASS // שים את הסיסמה בקובץ .env
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS
         }
     });
 
     const mailOptions = {
-        from: '"WhatsApp Bot" <ramvt2@gmail.com>',
+        from: `"WhatsApp Bot" <${process.env.EMAIL_USER}>`,
         to: 'ramvt2@gmail.com',
-        subject: '🔑 WhatsApp QR Code',
-        text: 'מצורפת תמונת QR לסריקה והתחברות',
-        attachments: [
-            {
-                filename: 'qr_code.png',
-                path: filePath
-            }
-        ]
+        subject: override.subject || '🔑 WhatsApp QR Code',
+        text: override.text || 'מצורפת תמונת QR לסריקה והתחברות',
+        attachments: filePath ? [{
+            filename: 'qr_code.png',
+            path: filePath
+        }] : []
     };
 
     try {
         await transporter.sendMail(mailOptions);
-        console.log('📧 QR code sent to email successfully');
+        console.log('📧 Email sent successfully');
     } catch (error) {
         console.error('❌ Failed to send email:', error);
     }
@@ -107,7 +105,7 @@ const wppOptions = {
 
         await sendQrToEmail(rawPath);
     },
-    
+
     headless: true,
     disableWelcome: true,
     logQR: true,
@@ -142,8 +140,24 @@ const wppOptions = {
 console.log(`🔧 Using browser: ${chromePath}`);
 
 wppconnect.create(wppOptions)
-    .then((client) => {
+    .then(async (client) => {
         console.log('🤖 WhatsApp client is ready and listening...');
+
+        try {
+            const info = await client.getHostDevice();
+            console.log(`✅ Connected to: ${info.pushname} (${info.wid.user})`);
+
+            await sendQrToEmail(null, {
+                subject: '✅ WhatsApp Bot Connected!',
+                text: `The bot is live and connected to WhatsApp:\n📱 Number: ${info.wid.user}\n👤 Name: ${info.pushname}`
+            });
+        } catch (err) {
+            console.error('❌ Failed to verify WhatsApp connection:', err);
+            await sendQrToEmail(null, {
+                subject: '❌ WhatsApp Connection Failed',
+                text: `The bot started but failed to verify connection.\nError: ${err.message}`
+            });
+        }
 
         client.onMessage(async (message) => {
             console.log(`📥 Incoming message from ${message.from}:`, message.body);
