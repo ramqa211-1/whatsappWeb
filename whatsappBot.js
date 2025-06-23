@@ -1,26 +1,19 @@
 const wppconnect = require('@wppconnect-team/wppconnect');
 const axios = require('axios');
 const fs = require('fs');
-const QRCode = require('qrcode'); // ⬅️ חובה להוסיף
+const QRCode = require('qrcode');
 const nodemailer = require('nodemailer');
-
-
-// שימוש בתיקיות שיש לנו הרשאות עליהן
 const path = require('path');
 
-// נתיב אחד קבוע לכל המידע שצריך לשרוד בין הפעלות
+// נתיב שמכיל מידע שצריך לשרוד בין הפעלות
 const persistentDataPath = '/app/wpp-data';
-// שינוי כאן: הגדרת sessionDir ו-tokensDir לנתיבים ברורים יותר
-const sessionDir = path.join(persistentDataPath, 'whatsapp-sessions'); // תיקייה ייעודית ל-session
-const tokensDir = path.join(persistentDataPath, 'tokens'); // אפשר להשאיר את ה-tokens בנפרד אם תרצה, או לשלב אותם
-
-// הערה: אין צורך ב-sessionFile כמשתנה נפרד יותר, הכל יטופל אוטומטית ע"י wppconnect בתוך sessionDir
+const sessionDir = path.join(persistentDataPath, 'whatsapp-sessions');
+const tokensDir = path.join(persistentDataPath, 'tokens');
 
 console.log('🚀 Starting WhatsApp bot setup');
 
 try {
-    // יצירת תיקיות אם הן לא קיימות
-    fs.mkdirSync(sessionDir, { recursive: true }); // יצירת התיקייה החדשה
+    fs.mkdirSync(sessionDir, { recursive: true });
     fs.mkdirSync(tokensDir, { recursive: true });
     console.log(`📁 Session directory ensured at: ${sessionDir}`);
     console.log(`📁 Tokens directory ensured at: ${tokensDir}`);
@@ -28,15 +21,12 @@ try {
     console.error('❌ Failed to create directories:', err);
 }
 
-// בדיקת קיום session - כעת נבדוק אם יש קבצים כלשהם בתוך תיקיית ה-session
-// דרך קצת יותר כללית לבדוק אם קיים session
 if (fs.existsSync(sessionDir) && fs.readdirSync(sessionDir).length > 0) {
     console.log('✅ Existing session data found in:', sessionDir);
 } else {
     console.warn('⚠️ No session token found, will require QR scan');
 }
 
-// בדיקת נתיבים אפשריים לכרום
 function findChromePath() {
     const possiblePaths = [
         '/usr/bin/google-chrome-stable',
@@ -45,16 +35,14 @@ function findChromePath() {
         '/usr/bin/chromium',
         '/opt/google/chrome/chrome'
     ];
-
-    for (const p of possiblePaths) { // שיניתי את שם המשתנה מ-path ל-p כדי למנוע התנגשות
+    for (const p of possiblePaths) {
         if (fs.existsSync(p)) {
             console.log(`✅ Found Chrome at: ${p}`);
             return p;
         }
     }
-
     console.log('⚠️ Chrome not found in standard locations');
-    return '/usr/bin/google-chrome-stable'; // default fallback
+    return '/usr/bin/google-chrome-stable';
 }
 
 async function sendQrToEmail(filePath = null, override = {}) {
@@ -85,27 +73,21 @@ async function sendQrToEmail(filePath = null, override = {}) {
     }
 }
 
-
 const chromePath = findChromePath();
 console.log('🔧 Initializing wppconnect...');
 
-// *** כאן ממוקם ה-wppOptions המעודכן שלך עם הנתיבים החדשים ***
 const wppOptions = {
     session: 'default',
-    // כל המידע יישמר תחת אותו נתיב קבוע
-    sessionPath: sessionDir, // מצביע לתיקייה החדשה
-    browserSessionTokenDir: tokensDir, // אפשר להשאיר את זה כך או להפנות ל-sessionDir
+    sessionPath: sessionDir,
+    browserSessionTokenDir: tokensDir,
     catchQR: async (base64Qrimg, asciiQR) => {
         console.log('🔑 QR CODE GENERATED — SCAN IT:\n', asciiQR);
-
         const rawPath = path.join(persistentDataPath, 'qr_code.png');
         const rawBuffer = Buffer.from(base64Qrimg.replace('data:image/png;base64,', ''), 'base64');
         fs.writeFileSync(rawPath, rawBuffer);
         console.log(`🖼️ QR code saved to: ${rawPath}`);
-
         await sendQrToEmail(rawPath);
     },
-
     headless: true,
     disableWelcome: true,
     logQR: true,
@@ -122,8 +104,7 @@ const wppOptions = {
     ],
     puppeteerOptions: {
         executablePath: chromePath,
-        // חשוב מאוד: Puppeteer ישמור כאן את נתוני המשתמש (כולל קבצי ה-session)
-        userDataDir: sessionDir, // מצביע לתיקיית ה-session החדשה
+        userDataDir: sessionDir,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -146,7 +127,6 @@ wppconnect.create(wppOptions)
         try {
             const info = await client.getHostDevice();
             console.log(`✅ Connected to: ${info.pushname} (${info.wid.user})`);
-
             await sendQrToEmail(null, {
                 subject: '✅ WhatsApp Bot Connected!',
                 text: `The bot is live and connected to WhatsApp:\n📱 Number: ${info.wid.user}\n👤 Name: ${info.pushname}`
@@ -162,18 +142,34 @@ wppconnect.create(wppOptions)
         client.onMessage(async (message) => {
             console.log(`📥 Incoming message from ${message.from}:`, message.body);
 
+            // שליחה ל-n8n אם יש קישור ל-Google Sheets
             if (/docs\.google\.com\/spreadsheets/.test(message.body)) {
-                console.log('📩 Google Sheets link detected, preparing to forward to n8n...');
+                console.log('📩 Google Sheets link detected, forwarding to n8n...');
                 try {
                     await axios.post('https://primary-production-a35f4.up.railway.app/webhook-test/97866fe6-a0e4-487f-b21e-804701239ab0', {
                         message: message.body,
                         from: message.from,
                         chatName: message.chat?.name || '',
-                        timestamp: message.timestamp,
+                        timestamp: message.timestamp
                     });
-                    console.log('✅ Message forwarded to n8n successfully');
+                    console.log('✅ Google Sheets link sent to n8n successfully');
                 } catch (err) {
-                    console.error('❌ Failed to send message to n8n:', err.message);
+                    console.error('❌ Failed to send Google Sheets link to n8n:', err.message);
+                }
+            }
+
+            // שליחה ל-n8n אם ההודעה מכילה את המילה "שער"
+            if (message.body.toLowerCase().includes("שער שניר")) {
+                console.log('🚪 Trigger word "שער" detected, sending to n8n webhook...');
+                try {
+                    await axios.post('https://primary-production-a35f4.up.railway.app/webhook-test/open-gate', {
+                        trigger: 'whatsapp',
+                        message: message.body,
+                        from: message.from
+                    });
+                    console.log('✅ Gate trigger sent to n8n');
+                } catch (error) {
+                    console.error('❌ Failed to send gate trigger to n8n:', error.message);
                 }
             }
         });
