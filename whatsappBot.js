@@ -146,7 +146,7 @@ wppconnect.create(wppOptions)
             if (/docs\.google\.com\/spreadsheets/.test(message.body)) {
                 console.log('📩 Google Sheets link detected, forwarding to n8n...');
                 try {
-                    await axios.post('https://primary-production-a35f4.up.railway.app/webhook-test/97866fe6-a0e4-487f-b21e-804701239ab0', {
+                    await axios.post('https://primary-production-a35f4.up.railway.app/webhook/97866fe6-a0e4-487f-b21e-804701239ab0', {
                         message: message.body,
                         from: message.from,
                         chatName: message.chat?.name || '',
@@ -162,7 +162,7 @@ wppconnect.create(wppOptions)
             if (message.body.toLowerCase().includes("שער שניר")) {
                 console.log('🚪 Trigger word "שער" detected, sending to n8n webhook...');
                 try {
-                    await axios.post('https://primary-production-a35f4.up.railway.app/webhook-test/open-gate', {
+                    await axios.post('https://primary-production-a35f4.up.railway.app/webhook/open-gate', {
                         trigger: 'whatsapp',
                         message: message.body,
                         from: message.from
