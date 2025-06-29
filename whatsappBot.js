@@ -1,180 +1,96 @@
+// whatsappBot.js
 const wppconnect = require('@wppconnect-team/wppconnect');
-const axios = require('axios');
-const fs = require('fs');
-const QRCode = require('qrcode');
+const puppeteer  = require('puppeteer-core');
+const axios      = require('axios');
+const fs         = require('fs');
 const nodemailer = require('nodemailer');
-const path = require('path');
+const path       = require('path');
+const os         = require('os');
 
-// נתיב שמכיל מידע שצריך לשרוד בין הפעלות
-const persistentDataPath = '/app/wpp-data';
-const sessionDir = path.join(persistentDataPath, 'whatsapp-sessions');
-const tokensDir = path.join(persistentDataPath, 'tokens');
+// ---------- נתיבים ----------
+const baseDataPath = path.join(os.homedir(), 'wpp-data');
+const sessionDir   = path.join(baseDataPath, 'whatsapp-sessions');
+const tokensDir    = path.join(baseDataPath, 'tokens');
 
-console.log('🚀 Starting WhatsApp bot setup');
+// Chrome for Testing שהרצת עכשיו
+const chromePath = 'C:/Users/RamWalastal/.cache/puppeteer/chrome/win64-138.0.7204.49/chrome-win64/chrome.exe';
 
-try {
-    fs.mkdirSync(sessionDir, { recursive: true });
-    fs.mkdirSync(tokensDir, { recursive: true });
-    console.log(`📁 Session directory ensured at: ${sessionDir}`);
-    console.log(`📁 Tokens directory ensured at: ${tokensDir}`);
-} catch (err) {
-    console.error('❌ Failed to create directories:', err);
-}
+// ---------- תיקיות מתמידות ----------
+fs.mkdirSync(sessionDir, { recursive: true });
+fs.mkdirSync(tokensDir,  { recursive: true });
 
-if (fs.existsSync(sessionDir) && fs.readdirSync(sessionDir).length > 0) {
-    console.log('✅ Existing session data found in:', sessionDir);
-} else {
-    console.warn('⚠️ No session token found, will require QR scan');
-}
-
-function findChromePath() {
-    const possiblePaths = [
-        '/usr/bin/google-chrome-stable',
-        '/usr/bin/google-chrome',
-        '/usr/bin/chromium-browser',
-        '/usr/bin/chromium',
-        '/opt/google/chrome/chrome'
-    ];
-    for (const p of possiblePaths) {
-        if (fs.existsSync(p)) {
-            console.log(`✅ Found Chrome at: ${p}`);
-            return p;
-        }
-    }
-    console.log('⚠️ Chrome not found in standard locations');
-    return '/usr/bin/google-chrome-stable';
-}
-
+// ---------- שליחת QR למייל ----------
 async function sendQrToEmail(filePath = null, override = {}) {
-    const transporter = nodemailer.createTransport({
+    const transport = nodemailer.createTransport({
         service: 'gmail',
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-        }
+        auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
     });
-
-    const mailOptions = {
+    await transport.sendMail({
         from: `"WhatsApp Bot" <${process.env.EMAIL_USER}>`,
-        to: 'ramvt2@gmail.com',
+        to:   'ramvt2@gmail.com',
         subject: override.subject || '🔑 WhatsApp QR Code',
-        text: override.text || 'מצורפת תמונת QR לסריקה והתחברות',
-        attachments: filePath ? [{
-            filename: 'qr_code.png',
-            path: filePath
-        }] : []
-    };
-
-    try {
-        await transporter.sendMail(mailOptions);
-        console.log('📧 Email sent successfully');
-    } catch (error) {
-        console.error('❌ Failed to send email:', error);
-    }
+        text:    override.text    || 'מצורפת תמונת QR לסריקה והתחברות',
+        attachments: filePath ? [{ filename: 'qr_code.png', path: filePath }] : []
+    });
+    console.log('📧 Email sent');
 }
 
-const chromePath = findChromePath();
-console.log('🔧 Initializing wppconnect...');
-
-const wppOptions = {
-    session: 'default',
-    sessionPath: sessionDir,
-    browserSessionTokenDir: tokensDir,
-    catchQR: async (base64Qrimg, asciiQR) => {
-        console.log('🔑 QR CODE GENERATED — SCAN IT:\n', asciiQR);
-        const rawPath = path.join(persistentDataPath, 'qr_code.png');
-        const rawBuffer = Buffer.from(base64Qrimg.replace('data:image/png;base64,', ''), 'base64');
-        fs.writeFileSync(rawPath, rawBuffer);
-        console.log(`🖼️ QR code saved to: ${rawPath}`);
-        await sendQrToEmail(rawPath);
-    },
-    headless: true,
-    disableWelcome: true,
-    logQR: true,
-    executablePath: chromePath,
-    browserArgs: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
-        '--no-zygote',
-        '--single-process'
-    ],
-    puppeteerOptions: {
+// ---------- MAIN ----------
+(async () => {
+    // 1) פותחים כרום עם אותם דגלים שבדקת
+    const browser = await puppeteer.launch({
         executablePath: chromePath,
+        headless: false,
         userDataDir: sessionDir,
-        args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-            '--no-zygote',
-            '--single-process'
-        ]
-    }
-};
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    console.log('🔥 puppeteer browser launched');
 
-console.log(`🔧 Using browser: ${chromePath}`);
+    // 2) מחברים את WPPConnect לדפדפן הזה
+    const client = await wppconnect.create({
+        session: 'default',
+        browser,                         // ⬅️ המופע הפתוח
+        browserSessionTokenDir: tokensDir,
+        logQR: true,
+        disableWelcome: true,
+        catchQR: async (base64, ascii) => {
+            console.log('🔑 QR CODE:\n', ascii);
+            const img = path.join(baseDataPath, 'qr_code.png');
+            fs.writeFileSync(img, Buffer.from(base64.split(',')[1], 'base64'));
+            await sendQrToEmail(img);
+        }
+    });
 
-wppconnect.create(wppOptions)
-    .then(async (client) => {
-        console.log('🤖 WhatsApp client is ready and listening...');
+    // 3) חיבור הצליח
+    console.log('🤖 WhatsApp client ready');
+    const info = await client.getHostDevice();
+    console.log(`✅ Connected as ${info.pushname} (${info.wid.user})`);
+    await sendQrToEmail(null, {
+        subject: '✅ Bot Connected',
+        text: `Bot connected:\nNumber: ${info.wid.user}\nName: ${info.pushname}`
+    });
 
-        try {
-            const info = await client.getHostDevice();
-            console.log(`✅ Connected to: ${info.pushname} (${info.wid.user})`);
-            await sendQrToEmail(null, {
-                subject: '✅ WhatsApp Bot Connected!',
-                text: `The bot is live and connected to WhatsApp:\n📱 Number: ${info.wid.user}\n👤 Name: ${info.pushname}`
-            });
-        } catch (err) {
-            console.error('❌ Failed to verify WhatsApp connection:', err);
-            await sendQrToEmail(null, {
-                subject: '❌ WhatsApp Connection Failed',
-                text: `The bot started but failed to verify connection.\nError: ${err.message}`
-            });
+    // 4) האזנה להודעות
+    client.onMessage(async ({ body, from, chat, timestamp }) => {
+        console.log(`📥 ${from}: ${body}`);
+
+        // לינק Google Sheets -> n8n
+        if (/docs\.google\.com\/spreadsheets/.test(body)) {
+            await axios.post(
+                'https://primary-production-a35f4.up.railway.app/webhook/97866fe6-a0e4-487f-b21e-804701239ab0',
+                { message: body, from, chatName: chat?.name || '', timestamp }
+            );
         }
 
-        client.onMessage(async (message) => {
-            console.log(`📥 Incoming message from ${message.from}:`, message.body);
-
-            // שליחה ל-n8n אם יש קישור ל-Google Sheets
-            if (/docs\.google\.com\/spreadsheets/.test(message.body)) {
-                console.log('📩 Google Sheets link detected, forwarding to n8n...');
-                try {
-                    await axios.post('https://primary-production-a35f4.up.railway.app/webhook/97866fe6-a0e4-487f-b21e-804701239ab0', {
-                        message: message.body,
-                        from: message.from,
-                        chatName: message.chat?.name || '',
-                        timestamp: message.timestamp
-                    });
-                    console.log('✅ Google Sheets link sent to n8n successfully');
-                } catch (err) {
-                    console.error('❌ Failed to send Google Sheets link to n8n:', err.message);
-                }
-            }
-
-            // שליחה ל-n8n אם ההודעה מכילה את המילה "שער"
-            if (message.body.toLowerCase().includes("שער שניר")) {
-                console.log('🚪 Trigger word "שער" detected, sending to n8n webhook...');
-                try {
-                    await axios.post('https://primary-production-a35f4.up.railway.app/webhook/open-gate', {
-                        trigger: 'whatsapp',
-                        message: message.body,
-                        from: message.from
-                    });
-                    console.log('✅ Gate trigger sent to n8n');
-                } catch (error) {
-                    console.error('❌ Failed to send gate trigger to n8n:', error.message);
-                }
-            }
-        });
-    })
-    .catch((error) => {
-        console.error('❌ Failed to initialize WhatsApp client:', error);
-        process.exit(1);
+        // טריגר “שער שניר” -> פתיחת שער
+        if (body.toLowerCase().includes('שער שניר')) {
+            await axios.post(
+                'https://primary-production-a35f4.up.railway.app/webhook/open-gate',
+                { trigger: 'whatsapp', message: body, from }
+            );
+        }
     });
+})().catch(async (err) => {
+    console.error('❌ Fatal error:', err);
+    process.exit(1);
+});
