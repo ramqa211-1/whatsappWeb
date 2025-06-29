@@ -64,6 +64,7 @@ async function waitForHostDevice(client, retries = 5, delay = 3000) {
         browser,
         browserSessionTokenDir: tokensDir,
         logQR: true,
+        autoClose: false,
         disableWelcome: true,
         catchQR: async (base64, ascii) => {
             console.log('📸 QR code generated:\n' + ascii);
