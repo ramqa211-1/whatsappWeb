@@ -57,12 +57,24 @@ async function sendQrToEmail(filePath = null, override = {}) {
 
     // 3) חיבור הצליח
     console.log('🤖 WhatsApp client ready');
-    const info = await client.getHostDevice();
-    console.log(`✅ Connected as ${info.pushname} (${info.wid.user})`);
-    await sendQrToEmail(null, {
-        subject: '✅ Bot Connected',
-        text: `Bot connected:\nNumber: ${info.wid.user}\nName: ${info.pushname}`
-    });
+
+    try {
+        const info = await client.getHostDevice();
+        const name = info?.pushname || 'Unknown';
+        const number = info?.wid?.user || 'N/A';
+        console.log(`✅ Connected as ${name} (${number})`);
+        await sendQrToEmail(null, {
+            subject: '✅ Bot Connected',
+            text: `Bot connected:\nNumber: ${number}\nName: ${name}`
+        });
+    } catch (err) {
+        console.error('❌ Failed to verify WhatsApp connection:', err);
+        await sendQrToEmail(null, {
+            subject: '❌ WhatsApp Connection Failed',
+            text: `The bot started but failed to verify connection.\nError: ${err.message}`
+        });
+    }
+
 
     // 4) האזנה להודעות
     client.onMessage(async ({ body, from, chat, timestamp }) => {
