@@ -3,6 +3,7 @@ const qrcode = require('qrcode');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
 require('dotenv').config();
 
 // נתיב לשמירת קובץ QR
@@ -72,8 +73,45 @@ client.on('ready', async () => {
 client.on('message', async msg => {
     console.log(`📩 New message from ${msg.from}: ${msg.body}`);
 
-    if (msg.body.toLowerCase().includes('שלום')) {
+    const body = msg.body.toLowerCase();
+    const timestamp = msg.timestamp;
+    const from = msg.from;
+    const chat = msg._data?.notifyName || '';
+
+    // תגובת שלום פשוטה
+    if (body.includes('שלום')) {
         await msg.reply('היי! קיבלתי אותך ✨');
+    }
+
+    // לינק של גוגל שיט
+    if (/docs\.google\.com\/spreadsheets/.test(body)) {
+        console.log('🔗 Google Sheet detected. Sending to n8n...');
+        try {
+            await axios.post('https://primary-production-a35f4.up.railway.app/webhook/97866fe6-a0e4-487f-b21e-804701239ab0', {
+                message: msg.body,
+                from,
+                chatName: chat,
+                timestamp
+            });
+            console.log('✅ Google Sheets link forwarded to n8n');
+        } catch (err) {
+            console.error('❌ Failed to forward to n8n:', err.message);
+        }
+    }
+
+    // טריגר של שער
+    if (body.includes('שער שניר')) {
+        console.log('🚪 Detected gate trigger. Sending to n8n...');
+        try {
+            await axios.post('https://primary-production-a35f4.up.railway.app/webhook/open-gate', {
+                trigger: 'whatsapp',
+                message: msg.body,
+                from
+            });
+            console.log('✅ Gate webhook sent to n8n');
+        } catch (err) {
+            console.error('❌ Failed to send gate webhook to n8n:', err.message);
+        }
     }
 });
 
