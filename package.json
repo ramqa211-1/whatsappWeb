@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently --raw \"node whatsappBot.js\" \"node email-server.js\" \"node auto-scheduler.js\""
+    "start": "concurrently --raw \"node whatsappBot.js\" \"node email-server.js\""
   },
   "keywords": [],
   "author": "",
