@@ -95,6 +95,8 @@ async function waitForHostDevice(client, retries = 5, delay = 3000) {
         return;
     }
 
+    console.log('📨 Listening for incoming WhatsApp messages...');
+
     client.onMessage(async ({ body, from, chat, timestamp }) => {
         console.log(`📩 Message from ${from} at ${new Date(timestamp * 1000).toISOString()}: ${body}`);
 
@@ -127,9 +129,6 @@ async function waitForHostDevice(client, retries = 5, delay = 3000) {
             }
         }
     });
-}).catch((err) => {
+})().catch((err) => {
     console.error('❌ Fatal error in main function:', err);
-    // אל תעצור את כל הקונטיינר. תן לו להישאר חי כדי שיהיה אפשר לתקן/לנטר.
-    // process.exit(1); ← תמחק את זה!
 });
-
