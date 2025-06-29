@@ -5,11 +5,12 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
-// נתיב לשמירת קובץ ה־QR
+// נתיב לשמירת קובץ QR
 const qrPath = path.join(__dirname, 'qr_code.png');
 
-// פונקציה לשליחת אימייל
+// שליחת QR במייל
 async function sendQrToEmail(filePath, subject = '🔑 WhatsApp QR Code', text = 'מצורף QR להתחברות') {
+    console.log('📧 Sending QR via email...');
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -26,48 +27,57 @@ async function sendQrToEmail(filePath, subject = '🔑 WhatsApp QR Code', text =
         attachments: filePath ? [{ filename: 'qr_code.png', path: filePath }] : []
     });
 
-    console.log('✅ QR נשלח למייל בהצלחה');
+    console.log('✅ Email sent successfully');
 }
 
-// יצירת הלקוח
+// יצירת לקוח WhatsApp עם שמירת סשן בתוך ה-volume
 const client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({
+        dataPath: '/app/wpp-data' // ← נתיב שממופה ל-volume ב-Railway
+    }),
     puppeteer: {
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox']
     }
 });
 
-// קבלת QR והמרה לתמונה
+// QR שנוצר
 client.on('qr', async qr => {
-    console.log('📸 QR נוצר - שולח למייל...');
+    console.log('📸 QR code generated, saving and sending by email...');
     try {
         await qrcode.toFile(qrPath, qr);
         await sendQrToEmail(qrPath);
     } catch (err) {
-        console.error('❌ שגיאה בשליחת QR:', err);
+        console.error('❌ Error sending QR:', err);
     }
 });
 
-// התחברות מוכנה
+// התחברות מוצלחת
 client.on('ready', async () => {
     console.log('✅ WhatsApp מחובר ומוכן!');
-    const info = await client.info;
-    console.log(`📱 Connected to: ${info.pushname || 'Unknown'} (${info.wid._serialized})`);
-    const name = info?.pushname || 'Unknown';
-    const number = info?.id?.user || 'N/A';
+    try {
+        const info = client.info;
+        const name = info?.pushname || 'Unknown';
+        const number = info?.wid?.user || 'N/A';
 
-    await sendQrToEmail(null, '✅ Bot Connected', `Bot connected:\nNumber: ${number}\nName: ${name}`);
+        console.log(`📱 Connected as: ${name} (${number})`);
+
+        await sendQrToEmail(null, '✅ Bot Connected', `Bot connected:\nNumber: ${number}\nName: ${name}`);
+    } catch (err) {
+        console.error('❌ Error retrieving info:', err);
+    }
 });
 
-// הודעה נכנסת
+// הודעות נכנסות
 client.on('message', async msg => {
-    console.log(`📩 הודעה מ-${msg.from}: ${msg.body}`);
+    console.log(`📩 New message from ${msg.from}: ${msg.body}`);
 
     if (msg.body.toLowerCase().includes('שלום')) {
         await msg.reply('היי! קיבלתי אותך ✨');
     }
 });
 
-// התחלת החיבור
-client.initialize();
+// הפעלת הבוט
+client.initialize().catch(err => {
+    console.error('❌ Fatal Error during initialize:', err);
+});
