@@ -52,7 +52,8 @@ client.on('qr', async qr => {
 // התחברות מוכנה
 client.on('ready', async () => {
     console.log('✅ WhatsApp מחובר ומוכן!');
-    const info = await client.getMe();
+    const info = await client.info;
+    console.log(`📱 Connected to: ${info.pushname || 'Unknown'} (${info.wid._serialized})`);
     const name = info?.pushname || 'Unknown';
     const number = info?.id?.user || 'N/A';
 
