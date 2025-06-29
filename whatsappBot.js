@@ -127,7 +127,9 @@ async function waitForHostDevice(client, retries = 5, delay = 3000) {
             }
         }
     });
-})().catch((err) => {
-    console.error('❌ Fatal error:', err);
-    process.exit(1);
+}).catch((err) => {
+    console.error('❌ Fatal error in main function:', err);
+    // אל תעצור את כל הקונטיינר. תן לו להישאר חי כדי שיהיה אפשר לתקן/לנטר.
+    // process.exit(1); ← תמחק את זה!
 });
+
