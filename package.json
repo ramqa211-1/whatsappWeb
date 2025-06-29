@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently --raw \"node whatsappBot.js\" \"node email-server.js\""
+    "start": "concurrently --raw \"node whatsappBot.js\" \"node email-server.js\" \"node auto-scheduler.js\""
   },
   "keywords": [],
   "author": "",
@@ -19,6 +19,7 @@
     "dotenv": "^16.5.0",
     "express": "^4.21.2",
     "multer": "^2.0.1",
+    "node-cron": "^4.1.1",
     "nodemailer": "^7.0.3",
     "pg": "^8.16.0",
     "qrcode": "^1.5.4"
