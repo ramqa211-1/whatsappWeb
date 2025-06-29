@@ -27,16 +27,15 @@ async function scaleService(quantity) {
         console.error('❌ Failed to scale:', err.response?.data || err.message);
     }
 }
-
-// 🌙 כל יום ב־22:00
-cron.schedule('0 22 * * *', () => {
-    console.log('🌙 Scale down at 22:00');
+// 🌙 כל יום ב־22:00 שעון ישראל (UTC+3 → 19:00 UTC)
+cron.schedule('0 19 * * *', () => {
+    console.log('🌙 Scale down at 22:00 (Israel time)');
     scaleService(0);
 });
 
-// ☀️ כל יום ב־07:00
-cron.schedule('0 7 * * *', () => {
-    console.log('☀️ Scale up at 07:00');
+// ☀️ כל יום ב־07:00 שעון ישראל (UTC+3 → 04:00 UTC)
+cron.schedule('0 4 * * *', () => {
+    console.log('☀️ Scale up at 07:00 (Israel time)');
     scaleService(1);
 });
 
