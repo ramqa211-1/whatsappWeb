@@ -1,25 +1,21 @@
 // whatsappBot.js
 const wppconnect = require('@wppconnect-team/wppconnect');
-const puppeteer  = require('puppeteer-core');
+const puppeteer  = require('puppeteer');        // ← puppeteer הרגיל
 const axios      = require('axios');
 const fs         = require('fs');
 const nodemailer = require('nodemailer');
 const path       = require('path');
 const os         = require('os');
+require('dotenv').config(); // ← חובה אם אתה לא עובד עם Railway/Env מובנה
 
-// ---------- נתיבים ----------
+
+// נתיבי דאטה מקומיים (בתוך /root או /home/runner)
 const baseDataPath = path.join(os.homedir(), 'wpp-data');
 const sessionDir   = path.join(baseDataPath, 'whatsapp-sessions');
 const tokensDir    = path.join(baseDataPath, 'tokens');
-
-// Chrome for Testing שהרצת עכשיו
-const chromePath = 'C:/Users/RamWalastal/.cache/puppeteer/chrome/win64-138.0.7204.49/chrome-win64/chrome.exe';
-
-// ---------- תיקיות מתמידות ----------
 fs.mkdirSync(sessionDir, { recursive: true });
 fs.mkdirSync(tokensDir,  { recursive: true });
 
-// ---------- שליחת QR למייל ----------
 async function sendQrToEmail(filePath = null, override = {}) {
     const transport = nodemailer.createTransport({
         service: 'gmail',
@@ -27,29 +23,27 @@ async function sendQrToEmail(filePath = null, override = {}) {
     });
     await transport.sendMail({
         from: `"WhatsApp Bot" <${process.env.EMAIL_USER}>`,
-        to:   'ramvt2@gmail.com',
+        to: 'ramvt2@gmail.com',
         subject: override.subject || '🔑 WhatsApp QR Code',
-        text:    override.text    || 'מצורפת תמונת QR לסריקה והתחברות',
+        text: override.text || 'מצורפת תמונת QR לסריקה והתחברות',
         attachments: filePath ? [{ filename: 'qr_code.png', path: filePath }] : []
     });
     console.log('📧 Email sent');
 }
 
-// ---------- MAIN ----------
 (async () => {
-    // 1) פותחים כרום עם אותם דגלים שבדקת
+    // 1) פותחים את Chromium שה-puppeteer התקין באופן אוטומטי
     const browser = await puppeteer.launch({
-        executablePath: chromePath,
-        headless: false,
-        userDataDir: sessionDir,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
+        headless: true,                                   // אין GUI
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        userDataDir: '/tmp/wpp-session'                   // כתיבה בטוחה
     });
     console.log('🔥 puppeteer browser launched');
 
-    // 2) מחברים את WPPConnect לדפדפן הזה
+    // 2) מחברים ל-WPPConnect
     const client = await wppconnect.create({
         session: 'default',
-        browser,                         // ⬅️ המופע הפתוח
+        browser,
         browserSessionTokenDir: tokensDir,
         logQR: true,
         disableWelcome: true,
@@ -73,16 +67,12 @@ async function sendQrToEmail(filePath = null, override = {}) {
     // 4) האזנה להודעות
     client.onMessage(async ({ body, from, chat, timestamp }) => {
         console.log(`📥 ${from}: ${body}`);
-
-        // לינק Google Sheets -> n8n
         if (/docs\.google\.com\/spreadsheets/.test(body)) {
             await axios.post(
                 'https://primary-production-a35f4.up.railway.app/webhook/97866fe6-a0e4-487f-b21e-804701239ab0',
                 { message: body, from, chatName: chat?.name || '', timestamp }
             );
         }
-
-        // טריגר “שער שניר” -> פתיחת שער
         if (body.toLowerCase().includes('שער שניר')) {
             await axios.post(
                 'https://primary-production-a35f4.up.railway.app/webhook/open-gate',
@@ -90,7 +80,7 @@ async function sendQrToEmail(filePath = null, override = {}) {
             );
         }
     });
-})().catch(async (err) => {
+})().catch((err) => {
     console.error('❌ Fatal error:', err);
     process.exit(1);
 });
