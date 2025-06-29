@@ -55,7 +55,7 @@ async function waitForHostDevice(client, retries = 5, delay = 3000) {
     const browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        userDataDir: '/tmp/wpp-session'
+        userDataDir: '/tmp/wpp-session-v2'
     });
     console.log('🔥 puppeteer browser launched');
 
