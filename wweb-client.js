@@ -5,6 +5,12 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 require('dotenv').config();
+const express = require('express');
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+app.use(express.json());
+
 
 // נתיב לשמירת קובץ QR
 const qrPath = path.join(__dirname, 'qr_code.png');
@@ -132,3 +138,26 @@ client.on('message', async msg => {
 client.initialize().catch(err => {
     console.error('❌ Fatal Error during initialize:', err);
 });
+
+// Endpoint לשליחת הודעה לוואטסאפ מבחוץ (למשל מ-n8n)
+app.post('/send-message', async (req, res) => {
+    const { to, message } = req.body;
+
+    if (!to || !message) {
+        return res.status(400).json({ error: 'Missing "to" or "message" field' });
+    }
+
+    try {
+        await client.sendMessage(to, message);
+        console.log(`📤 Sent message to ${to}: ${message}`);
+        res.json({ success: true });
+    } catch (err) {
+        console.error('❌ Failed to send message:', err.message);
+        res.status(500).json({ error: 'Failed to send message' });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`🚀 Express server running on port ${PORT}`);
+});
+
