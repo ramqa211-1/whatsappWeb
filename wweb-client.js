@@ -59,7 +59,7 @@ client.on('qr', async qr => {
     }
 });
 
-// התחברות מוצלחת
+
 client.on('ready', async () => {
     console.log('✅ WhatsApp מחובר ומוכן!');
     try {
@@ -73,6 +73,16 @@ client.on('ready', async () => {
     } catch (err) {
         console.error('❌ Error retrieving info:', err);
     }
+
+    // ✅ זה המקום הנכון להדמיה!
+    setTimeout(() => {
+        client.emit('message', {
+            body: 'סכם לי את המיילים של סלקום',
+            from: '972548010190@c.us',
+            _data: { notifyName: 'Ram QA Bot' },
+            timestamp: Math.floor(Date.now() / 1000)
+        });
+    }, 5000);
 });
 
 // הודעות נכנסות
