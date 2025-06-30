@@ -78,11 +78,6 @@ client.on('message', async msg => {
     const from = msg.from;
     const chat = msg._data?.notifyName || '';
 
-    // תגובת שלום פשוטה
-    if (body.includes('שלום')) {
-        await msg.reply('היי! קיבלתי אותך ✨');
-    }
-
     // לינק של גוגל שיט
     if (/docs\.google\.com\/spreadsheets/.test(body)) {
         console.log('🔗 Google Sheet detected. Sending to n8n...');
