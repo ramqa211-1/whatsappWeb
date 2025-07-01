@@ -11,11 +11,8 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-
-// נתיב לשמירת קובץ QR
 const qrPath = path.join(__dirname, 'qr_code.png');
 
-// שליחת QR במייל
 async function sendQrToEmail(filePath, subject = '🔑 WhatsApp QR Code', text = 'מצורף QR להתחברות') {
     console.log('📧 Sending QR via email...');
     const transporter = nodemailer.createTransport({
@@ -37,10 +34,9 @@ async function sendQrToEmail(filePath, subject = '🔑 WhatsApp QR Code', text =
     console.log('✅ Email sent successfully');
 }
 
-// יצירת לקוח WhatsApp עם שמירת סשן בתוך ה-volume
 const client = new Client({
     authStrategy: new LocalAuth({
-        dataPath: '/app/wpp-data' // ← נתיב שממופה ל-volume ב-Railway
+        dataPath: '/app/wpp-data'
     }),
     puppeteer: {
         headless: true,
@@ -48,7 +44,7 @@ const client = new Client({
     }
 });
 
-// QR שנוצר
+// QR
 client.on('qr', async qr => {
     console.log('📸 QR code generated, saving and sending by email...');
     try {
@@ -59,7 +55,7 @@ client.on('qr', async qr => {
     }
 });
 
-
+// מחובר
 client.on('ready', async () => {
     console.log('✅ WhatsApp מחובר ומוכן!');
     try {
@@ -68,33 +64,21 @@ client.on('ready', async () => {
         const number = info?.wid?.user || 'N/A';
 
         console.log(`📱 Connected as: ${name} (${number})`);
-
         await sendQrToEmail(null, '✅ Bot Connected', `Bot connected:\nNumber: ${number}\nName: ${name}`);
     } catch (err) {
         console.error('❌ Error retrieving info:', err);
     }
-
-    // ✅ זה המקום הנכון להדמיה!
-    setTimeout(() => {
-        client.emit('message', {
-            body: 'סכם לי את המיילים של סלקום',
-            from: '972548010190@c.us',
-            _data: { notifyName: 'Ram QA Bot' },
-            timestamp: Math.floor(Date.now() / 1000)
-        });
-    }, 5000);
 });
 
-// הודעות נכנסות
-client.on('message', async msg => {
-    console.log(`📩 New message from ${msg.from}: ${msg.body}`);
-
-    const body = msg.body.toLowerCase();
+// לוגיקה משותפת לכל הודעה
+async function handleMessage(msg, source = 'event') {
+    const body = msg.body?.toLowerCase?.() || '';
     const timestamp = msg.timestamp;
-    const from = msg.from;
+    const from = msg.from || msg.to || 'unknown';
     const chat = msg._data?.notifyName || '';
 
-    // לינק של גוגל שיט
+    console.log(`📩 [${source}] Message from ${from}: ${body}`);
+
     if (/docs\.google\.com\/spreadsheets/.test(body)) {
         console.log('🔗 Google Sheet detected. Sending to n8n...');
         try {
@@ -110,10 +94,8 @@ client.on('message', async msg => {
         }
     }
 
-    // תנאי כללי לניתוח פקודות AI
     if (body.includes('מייל') || body.includes('סכם') || body.includes('מצא לי') || body.includes('חפש לי')) {
         console.log('🧠 Detected potential AI command, forwarding to n8n...');
-
         try {
             await axios.post('https://primary-production-a35f4.up.railway.app/webhook/ai-command', {
                 message: msg.body,
@@ -127,8 +109,6 @@ client.on('message', async msg => {
         }
     }
 
-
-    // טריגר של שער
     if (body.includes('שער שניר')) {
         console.log('🚪 Detected gate trigger. Sending to n8n...');
         try {
@@ -142,6 +122,18 @@ client.on('message', async msg => {
             console.error('❌ Failed to send gate webhook to n8n:', err.message);
         }
     }
+}
+
+// הודעות נכנסות
+client.on('message', async msg => {
+    await handleMessage(msg, 'message');
+});
+
+// הודעות שאתה שלחת (כולל לקבוצות)
+client.on('message_create', async msg => {
+    if (msg.fromMe && msg.to.includes('@g.us')) {
+        await handleMessage(msg, 'message_create');
+    }
 });
 
 // הפעלת הבוט
@@ -149,7 +141,7 @@ client.initialize().catch(err => {
     console.error('❌ Fatal Error during initialize:', err);
 });
 
-// Endpoint לשליחת הודעה לוואטסאפ מבחוץ (למשל מ-n8n)
+// endpoint חיצוני לשליחת הודעות
 app.post('/send-message', async (req, res) => {
     const { to, message } = req.body;
 
@@ -170,4 +162,3 @@ app.post('/send-message', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`🚀 Express server running on port ${PORT}`);
 });
-
