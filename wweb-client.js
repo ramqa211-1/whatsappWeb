@@ -106,7 +106,7 @@ async function handleMessage(msg, source = 'event') {
             console.error('❌ Failed to forward to n8n:', err.message);
         }
     }
-
+//
     if (body.includes('מייל') || body.includes('סכם') || body.includes('מצא לי') || body.includes('חפש לי')) {
         console.log('🧠 Detected potential AI command, forwarding to n8n...');
         try {
