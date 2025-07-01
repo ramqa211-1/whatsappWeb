@@ -74,8 +74,21 @@ client.on('ready', async () => {
 async function handleMessage(msg, source = 'event') {
     const body = msg.body?.toLowerCase?.() || '';
     const timestamp = msg.timestamp;
-    const from = msg.from || msg.to || 'unknown';
-    const chat = msg._data?.notifyName || '';
+    let from = msg.from || msg.to || 'unknown';
+    const chatName = msg._data?.notifyName || '';
+
+    // 🔍 בדיקת קבוצה וזיהוי השולח
+    try {
+        const chatObj = await msg.getChat();
+        if (chatObj.isGroup) {
+            const contact = await msg.getContact();
+            const senderNumber = contact.number + '@c.us';
+            console.log(`🔍 Group message from: ${senderNumber}`);
+            from = senderNumber;
+        }
+    } catch (e) {
+        console.error('❌ Failed to extract contact info:', e.message);
+    }
 
     console.log(`📩 [${source}] Message from ${from}: ${body}`);
 
@@ -85,7 +98,7 @@ async function handleMessage(msg, source = 'event') {
             await axios.post('https://primary-production-a35f4.up.railway.app/webhook/97866fe6-a0e4-487f-b21e-804701239ab0', {
                 message: msg.body,
                 from,
-                chatName: chat,
+                chatName,
                 timestamp
             });
             console.log('✅ Google Sheets link forwarded to n8n');
@@ -100,7 +113,7 @@ async function handleMessage(msg, source = 'event') {
             await axios.post('https://primary-production-a35f4.up.railway.app/webhook/ai-command', {
                 message: msg.body,
                 from,
-                chatName: chat,
+                chatName,
                 timestamp
             });
             console.log('✅ AI command sent to n8n');
