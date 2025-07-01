@@ -143,6 +143,8 @@ client.initialize().catch(err => {
 
 // endpoint חיצוני לשליחת הודעות
 app.post('/send-message', async (req, res) => {
+    console.log('📨 Incoming request to /send-message:', req.body);
+
     const { to, message } = req.body;
 
     if (!to || !message) {
