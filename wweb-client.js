@@ -110,7 +110,7 @@ async function handleMessage(msg, source = 'event') {
     if (body.includes('מייל') || body.includes('סכם') || body.includes('מצא לי') || body.includes('חפש לי')) {
         console.log('🧠 Detected potential AI command, forwarding to n8n...');
         try {
-            await axios.post('https://whatsappweb-production-a290.up.railway.app/webhook/ai-command', {
+            await axios.post('https://primary-production-a35f4.up.railway.app/webhook/ai-command', {
                 message: msg.body,
                 from,
                 chatName,
