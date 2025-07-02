@@ -95,7 +95,7 @@ async function handleMessage(msg, source = 'event') {
     if (/docs\.google\.com\/spreadsheets/.test(body)) {
         console.log('🔗 Google Sheet detected. Sending to n8n...');
         try {
-            await axios.post(process.env.RAILWAY_SHEETS, {
+            await axios.post('https://primary-production-a35f4.up.railway.app/webhook/97866fe6-a0e4-487f-b21e-804701239ab0', {
                 message: msg.body,
                 from,
                 chatName,
@@ -125,7 +125,7 @@ async function handleMessage(msg, source = 'event') {
     if (body.includes('שער שניר')) {
         console.log('🚪 Detected gate trigger. Sending to n8n...');
         try {
-            await axios.post( process.env.RAILWAY_OPENGATE, {
+            await axios.post('https://primary-production-a35f4.up.railway.app/webhook/open-gate', {
                 trigger: 'whatsapp',
                 message: msg.body,
                 from
