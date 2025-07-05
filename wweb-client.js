@@ -1,3 +1,12 @@
+// Global error handlers — לפני כל require אחר
+process.on('uncaughtException', err => {
+    console.error('🔥 Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', reason => {
+    console.error('💥 Unhandled Rejection:', reason);
+});
+
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
 const nodemailer = require('nodemailer');
@@ -10,6 +19,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
+
+
 
 const qrPath = path.join(__dirname, 'qr_code.png');
 
