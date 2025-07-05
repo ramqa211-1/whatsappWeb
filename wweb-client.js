@@ -155,7 +155,7 @@ client.initialize().catch(err => {
 });
 
 // endpoint חיצוני לשליחת הודעות
-app.post('/send-message', async (req, res) => {
+app.post('https://whatsappweb-production-a290.up.railway.app/send-message', async (req, res) => {
     console.log('📨 Incoming request to /send-message:', req.body);
 
     const { to, message } = req.body;
