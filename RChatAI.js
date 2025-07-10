@@ -181,7 +181,7 @@ Client successfully connected!
         console.log(`❌ Client ${clientId} disconnected:`, reason);
     });
 
-    // הודעות נכנסות - העברה נקייה ל-N8N
+    // הודעות נכנסות - העברה ל-N8N עם clientId
     client.on('message', async msg => {
         await handleMessage(msg, clientId);
     });
@@ -196,7 +196,7 @@ Client successfully connected!
     return client;
 }
 
-// טיפול בהודעות - נקי ופשוט, רק העברה ל-N8N
+// טיפול בהודעות - העברה ל-N8N עם clientId
 async function handleMessage(msg, clientId) {
     const body = msg.body || '';
     const timestamp = msg.timestamp;
@@ -217,7 +217,7 @@ async function handleMessage(msg, clientId) {
 
     console.log(`📩 [${clientId}] Message from ${from}: ${body}`);
 
-    // שליחה ל-N8N - רק הנתונים הבסיסיים
+    // שליחה ל-N8N עם clientId - הסוכן יזהה את הלקוח
     try {
         const webhookData = {
             // נתוני ההודעה
@@ -226,19 +226,20 @@ async function handleMessage(msg, clientId) {
             timestamp: timestamp,
             chatName: chatName,
 
-            // זיהוי הלקוח - N8N יטפל בכל השאר
+            // ✅ זיהוי הלקוח - חשוב לN8N!
             clientId: clientId,
 
             // זיהוי המקור
             source: 'whatsapp-multi-client'
         };
 
+        // ✅ שליחה לWebhook של הסוכן שלך
         await axios.post(
             process.env.N8N_WEBHOOK_URL || 'https://primary-production-a35f4.up.railway.app/webhook/9507413c-dd19-4820-a6ba-f092450bc548',
             webhookData
         );
 
-        console.log(`✅ Message forwarded to N8N for client: ${clientId}`);
+        console.log(`✅ Message forwarded to N8N Agent for client: ${clientId}`);
 
     } catch (err) {
         console.error(`❌ Failed to forward message for ${clientId}:`, err.message);
@@ -291,7 +292,7 @@ app.post('/create-client', async (req, res) => {
     }
 });
 
-// שליחת הודעה מטעם לקוח ספציפי
+// ✅ שליחת הודעה מטעם לקוח ספציפי - N8N יקרא לזה
 app.post('/send-message/:clientId', async (req, res) => {
     try {
         const { clientId } = req.params;
@@ -341,10 +342,9 @@ app.get('/health', (req, res) => {
     });
 });
 
-// הפעלת השרת - תחליף את הקטע הזה בסוף הקוד:
-
+// הפעלת השרת
 app.listen(PORT, async () => {
-    console.log(`🚀 Clean Multi-Client WhatsApp System running on port ${PORT}`);
+    console.log(`🚀 Multi-Client WhatsApp System with N8N Agent running on port ${PORT}`);
     console.log('');
     console.log('📋 Available endpoints:');
     console.log('  POST /create-client - Create new WhatsApp client');
@@ -357,10 +357,10 @@ app.listen(PORT, async () => {
     console.log('  1. POST to /create-client with {clientId, email}');
     console.log('  2. Client receives QR code via email');
     console.log('  3. Client scans QR with their WhatsApp');
-    console.log('  4. Bot is active and forwards all messages to N8N');
-    console.log('  5. N8N processes and sends responses back via /send-message/:clientId');
+    console.log('  4. Bot forwards all messages to N8N Agent');
+    console.log('  5. N8N Agent processes and sends responses back via /send-message/:clientId');
     console.log('');
-    console.log('🔗 All messages are forwarded to N8N webhook for AI processing');
+    console.log('🤖 All messages are forwarded to N8N Agent for AI processing');
 
     // בדיקת לקוח חדש מ-Environment Variable
     if (process.env.NEW_CLIENT_EMAIL) {
