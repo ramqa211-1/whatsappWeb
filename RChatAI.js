@@ -26,7 +26,11 @@ const clientEmails = new Map(); // clientId -> email for QR sending
 
 // יצירת תיקיות נדרשות
 const ensureDirectories = () => {
-    const dirs = ['./qr_codes', './client_data'];
+    const dirs = [
+        './qr_codes',
+        '/app/wpp-data/clients',  // ✅ Volume directory
+        './client_data'           // ✅ Local backup
+    ];
     dirs.forEach(dir => {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -66,7 +70,7 @@ async function createWhatsAppClient(clientId, clientEmail) {
     const client = new Client({
         authStrategy: new LocalAuth({
             clientId: clientId,
-            dataPath: `./client_data/${clientId}`
+            dataPath: `/app/wpp-data/clients/${clientId}` // ✅ שמירה ב-Volume!
         }),
         puppeteer: {
             headless: true,
