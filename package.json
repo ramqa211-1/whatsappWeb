@@ -2,10 +2,12 @@
   "name": "whatsappweb",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "RChatAI.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node wweb-client.js"
+    "start": "concurrently \"node wweb-client.js\" \"node RChatAI.js\"",
+    "business": "node RChatAI.js",
+    "personal": "node wweb-client.js"
   },
   "keywords": [],
   "author": "",
