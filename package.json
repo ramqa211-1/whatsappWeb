@@ -5,7 +5,7 @@
   "main": "RChatAI.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "concurrently \"node wweb-client.js\" \"node RChatAI.js\"",
+    "start": "node wweb-client.js",
     "business": "node RChatAI.js",
     "personal": "node wweb-client.js"
   },
