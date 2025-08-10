@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Python Developers Scraper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #0077b5 0%, #005885 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        .form-section {
+            padding: 40px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #0077b5;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #0077b5 0%, #005885 100%);
+            color: white;
+            padding: 18px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,119,181,0.3);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        
+        .status.running {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+        }
+        
+        .status.completed {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        
+        .status.failed {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        
+        .results {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .developer-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-left: 4px solid #0077b5;
+        }
+        
+        .developer-name {
+            font-weight: 600;
+            color: #0077b5;
+            margin-bottom: 5px;
+        }
+        
+        .developer-title {
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .developer-location {
+            color: #999;
+            font-size: 0.9rem;
+        }
+        
+        .download-btn {
+            background: #28a745;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0077b5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            background: #f8f9fa;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐍 LinkedIn Python Scraper</h1>
+            <p>חילוץ מפתחי Python מ-LinkedIn בקלות</p>
+        </div>
+        
+        <div class="form-section">
+            <form id="scrapeForm">
+                <div class="form-group">
+                    <label for="email">📧 LinkedIn Email:</label>
+                    <input type="email" id="email" name="email" required 
+                           placeholder="your-email@gmail.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">🔒 LinkedIn Password:</label>
+                    <input type="password" id="password" name="password" required 
+                           placeholder="הסיסמה שלך">
+                </div>
+                
+                <div class="form-group">
+                    <label for="searchQuery">🔍 מילות חיפוש:</label>
+                    <select id="searchQuery" name="searchQuery">
+                        <option value="Python Developer">Python Developer</option>
+                        <option value="Senior Python Developer">Senior Python Developer</option>
+                        <option value="Python Backend Developer">Python Backend Developer</option>
+                        <option value="Full Stack Python Developer">Full Stack Python Developer</option>
+                        <option value="Django Developer">Django Developer</option>
+                        <option value="Flask Developer">Flask Developer</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="maxResults">📊 מספר תוצאות מקסימלי:</label>
+                    <select id="maxResults" name="maxResults">
+                        <option value="10">10 מפתחים</option>
+                        <option value="20" selected>20 מפתחים</option>
+                        <option value="50">50 מפתחים</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn" id="scrapeBtn">
+                    🚀 התחל חילוץ
+                    <span class="loading" id="loading" style="display: none;"></span>
+                </button>
+            </form>
+            
+            <div class="status" id="status">
+                <div id="statusMessage"></div>
+            </div>
+            
+            <div class="results" id="results">
+                <h3>📋 תוצאות:</h3>
+                <div id="developersList"></div>
+                <button class="btn download-btn" id="downloadBtn" style="display: none;">
+                    💾 הורד כ-CSV
+                </button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>🔒 הנתונים שלך מוגנים ולא נשמרים בשרת</p>
+        </div>
+    </div>
+
+    <script>
+        let currentJobId = null;
+        
+        document.getElementById('scrapeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            const scrapeBtn = document.getElementById('scrapeBtn');
+            const loading = document.getElementById('loading');
+            const status = document.getElementById('status');
+            
+            // הצגת מצב טעינה
+            scrapeBtn.disabled = true;
+            loading.style.display = 'inline-block';
+            scrapeBtn.innerHTML = '🔄 מחלץ נתונים... <span class="loading"></span>';
+            
+            try {
+                const response = await fetch('/api/scrape', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentJobId = result.jobId;
+                    showStatus('running', 'החילוץ החל... זה יקח כ-2-3 דקות');
+                    
+                    // בדיקת סטטוס כל 10 שניות
+                    checkStatus();
+                } else {
+                    showStatus('failed', result.error);
+                }
+            } catch (error) {
+                showStatus('failed', 'שגיאה בתקשורת עם השרת');
+            } finally {
+                scrapeBtn.disabled = false;
+                loading.style.display = 'none';
+                scrapeBtn.innerHTML = '🚀 התחל חילוץ';
+            }
+        });
+        
+        async function checkStatus() {
+            if (!currentJobId) return;
+            
+            try {
+                const response = await fetch(`/api/results/${currentJobId}`);
+                const result = await response.json();
+                
+                if (result.status === 'completed') {
+                    showStatus('completed', `הושלם! נמצאו ${result.data.totalResults} מפתחים`);
+                    displayResults(result.data.developers);
+                    showDownloadButton();
+                } else if (result.status === 'failed') {
+                    showStatus('failed', result.error || 'החילוץ נכשל');
+                } else if (result.status === 'running') {
+                    setTimeout(checkStatus, 10000); // בדיקה כל 10 שניות
+                }
+            } catch (error) {
+                showStatus('failed', 'שגיאה בבדיקת סטטוס');
+            }
+        }
+        
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            status.className = `status ${type}`;
+            status.style.display = 'block';
+            statusMessage.textContent = message;
+        }
+        
+        function displayResults(developers) {
+            const results = document.getElementById('results');
+            const developersList = document.getElementById('developersList');
+            
+            developersList.innerHTML = '';
+            
+            developers.forEach(dev => {
+                const card = document.createElement('div');
+                card.className = 'developer-card';
+                card.innerHTML = `
+                    <div class="developer-name">${dev.name}</div>
+                    <div class="developer-title">${dev.title}</div>
+                    <div class="developer-location">📍 ${dev.location}</div>
+                `;
+                developersList.appendChild(card);
+            });
+            
+            results.style.display = 'block';
+        }
+        
+        function showDownloadButton() {
+            const downloadBtn = document.getElementById('downloadBtn');
+            downloadBtn.style.display = 'block';
+            
+            downloadBtn.onclick = () => {
+                window.open(`/api/download/${currentJobId}`, '_blank');
+            };
+        }
+    </script>
+</body>
+</html>
