@@ -119,6 +119,16 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Simple test endpoint
+app.get('/test', (req, res) => {
+    res.json({ 
+        message: 'Server is running!', 
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        railway: !!process.env.RAILWAY_ENVIRONMENT
+    });
+});
+
 app.get('/health', (req, res) => {
     res.json({ 
         status: 'healthy', 
@@ -245,9 +255,19 @@ process.on('unhandledRejection', (reason, promise) => {
 const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 LinkedIn Scraper API running on port ${PORT}`);
     console.log(`📍 Health check: http://0.0.0.0:${PORT}/health`);
+    console.log(`🧪 Test endpoint: http://0.0.0.0:${PORT}/test`);
     console.log(`🌐 Web interface: http://0.0.0.0:${PORT}`);
     console.log(`🚂 Railway Environment: ${process.env.RAILWAY_ENVIRONMENT || 'local'}`);
     console.log(`📦 Node Version: ${process.version}`);
+    console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌍 Process Platform: ${process.platform}`);
+    console.log(`📁 Current Directory: ${process.cwd()}`);
+    console.log(`📋 Environment Variables:`, {
+        PORT: process.env.PORT,
+        NODE_ENV: process.env.NODE_ENV,
+        RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
+        RAILWAY_STATIC_URL: process.env.RAILWAY_STATIC_URL
+    });
 });
 
 server.on('error', (err) => {

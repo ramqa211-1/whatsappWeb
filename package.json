@@ -2,12 +2,18 @@
   "name": "linkedin-scraper-minimal",
   "version": "1.0.0", 
   "description": "Minimal LinkedIn Scraper for Railway",
-  "main": "debug.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node debug.js"
+    "start": "node server.js",
+    "test": "node verify_deployment.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "playwright": "^1.40.0",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "dotenv": "^16.3.1"
   },
   "engines": {
     "node": ">=18.0.0"
