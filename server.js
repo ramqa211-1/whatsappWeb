@@ -2,7 +2,17 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const path = require('path');
-const { chromium } = require('playwright');
+let chromium;
+
+// Try to load Playwright, but don't fail if it's not available
+try {
+    chromium = require('playwright').chromium;
+    console.log('✅ Playwright loaded successfully');
+} catch (error) {
+    console.warn('⚠️ Playwright not available:', error.message);
+    console.log('🔧 Server will start but scraping functionality will be limited');
+}
+
 require('dotenv').config();
 
 const app = express();
@@ -25,6 +35,10 @@ let scrapingResults = new Map();
 
 // LinkedIn scraper function
 async function scrapeLinkedInPythonDevelopers(email, password, searchQuery = 'Python Developer', maxResults = 20) {
+    if (!chromium) {
+        throw new Error('Playwright is not available. Cannot perform scraping.');
+    }
+
     const browser = await chromium.launch({
         headless: true,
         args: [
@@ -125,7 +139,9 @@ app.get('/test', (req, res) => {
         message: 'Server is running!', 
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || 'development',
-        railway: !!process.env.RAILWAY_ENVIRONMENT
+        railway: !!process.env.RAILWAY_ENVIRONMENT,
+        playwright: !!chromium,
+        status: 'ready'
     });
 });
 
@@ -135,7 +151,13 @@ app.get('/health', (req, res) => {
         timestamp: new Date().toISOString(),
         service: 'LinkedIn Python Scraper API',
         port: PORT,
-        environment: process.env.NODE_ENV || 'development'
+        environment: process.env.NODE_ENV || 'development',
+        playwright: !!chromium,
+        features: {
+            scraping: !!chromium,
+            api: true,
+            webInterface: true
+        }
     });
 });
 

@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "test": "node verify_deployment.js",
+    "test:local": "node verify_local.js",
     "dev": "nodemon server.js"
   },
   "dependencies": {

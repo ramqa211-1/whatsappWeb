@@ -1,0 +1,10 @@
+# Ignore unnecessary files for Railway deployment
+node_modules/
+.git/
+.gitignore
+README.md
+*.log
+screenshots/
+linkedin_scraping_results/
+.env
+.env.local
