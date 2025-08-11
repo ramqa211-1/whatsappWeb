@@ -1,5 +1,15 @@
 const express = require('express');
 const path = require('path');
+let chromium;
+
+// Try to load Playwright, but don't fail if it's not available
+try {
+    chromium = require('playwright').chromium;
+    console.log('✅ Playwright loaded successfully');
+} catch (error) {
+    console.warn('⚠️ Playwright not available:', error.message);
+    console.log('🔧 Server will start but scraping functionality will be limited');
+}
 
 const app = express();
 const PORT = 3000; // Fixed port for both local and Railway
@@ -11,9 +21,113 @@ app.use(express.static('public'));
 // Store for scraping results
 let scrapingResults = new Map();
 
+// LinkedIn scraper function - REAL SCRAPING!
+async function scrapeLinkedInReal(email, password, searchQuery = 'Python Developer', maxResults = 20) {
+    if (!chromium) {
+        throw new Error('Playwright is not available. Cannot perform scraping.');
+    }
+
+    const browser = await chromium.launch({
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
+        ]
+    });
+
+    const page = await browser.newPage({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+    });
+
+    try {
+        // התחברות ל-LinkedIn
+        await page.goto('https://www.linkedin.com/login', { waitUntil: 'networkidle' });
+        await page.fill('#username', email);
+        await page.fill('#password', password);
+        await page.click('button[type="submit"]');
+        
+        // המתנה לטעינה
+        await page.waitForTimeout(10000);
+        
+        // חיפוש
+        const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(searchQuery)}`;
+        await page.goto(searchUrl, { waitUntil: 'networkidle' });
+        await page.waitForTimeout(15000);
+
+        // חילוץ נתונים אמיתיים
+        const developers = await page.evaluate(() => {
+            const results = [];
+            const cards = document.querySelectorAll('[data-view-name="search-entity-result-universal-template"]');
+            
+            cards.forEach((card, index) => {
+                try {
+                    const allText = card.innerText || card.textContent || '';
+                    const lines = allText.split('\n').filter(line => line.trim().length > 0);
+                    
+                    if (lines.length >= 2) {
+                        const name = lines[0].trim();
+                        const title = lines.find(line => 
+                            line.toLowerCase().includes('developer') || 
+                            line.toLowerCase().includes('engineer') ||
+                            line.toLowerCase().includes('qa') ||
+                            line.toLowerCase().includes('devops') ||
+                            line.toLowerCase().includes('react') ||
+                            line.toLowerCase().includes('backend') ||
+                            line.toLowerCase().includes('js') ||
+                            line.toLowerCase().includes('python')
+                        ) || lines[1];
+                        
+                        const location = lines.find(line => 
+                            line.includes(',') || 
+                            line.toLowerCase().includes('israel') ||
+                            line.toLowerCase().includes('tel aviv') ||
+                            line.toLowerCase().includes('jerusalem')
+                        ) || 'N/A';
+
+                        if (name && name.length > 2 && !name.includes('Connect') && !name.includes('View')) {
+                            results.push({
+                                index: index + 1,
+                                name: name,
+                                title: title || 'N/A',
+                                location: location,
+                                scrapedAt: new Date().toISOString()
+                            });
+                        }
+                    }
+                } catch (e) {
+                    // שגיאה בפרופיל בודד
+                }
+            });
+            
+            return results;
+        });
+
+        await browser.close();
+        return {
+            success: true,
+            totalResults: developers.length,
+            developers: developers.slice(0, maxResults),
+            scrapedAt: new Date().toISOString()
+        };
+
+    } catch (error) {
+        await browser.close();
+        throw error;
+    }
+}
+
 // Simple routes
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.get('/health', (req, res) => {
@@ -54,26 +168,29 @@ app.post('/api/scrape', async (req, res) => {
         estimatedTime: '2-3 minutes'
     });
 
-    // הרצת החילוץ ברקע (כרגע רק simulation)
-    setTimeout(() => {
+    // הרצת החילוץ האמיתי ברקע
+    try {
+        const results = await scrapeLinkedInReal(
+            email, 
+            password, 
+            searchQuery || 'Python Developer', 
+            maxResults || 20
+        );
+        
         scrapingResults.set(jobId, {
             status: 'completed',
             startedAt: scrapingResults.get(jobId).startedAt,
             completedAt: new Date().toISOString(),
-            data: {
-                success: true,
-                totalResults: 5,
-                developers: [
-                    { index: 1, name: 'John Doe', title: 'Python Developer', location: 'Tel Aviv, Israel' },
-                    { index: 2, name: 'Jane Smith', title: 'Senior Python Developer', location: 'Jerusalem, Israel' },
-                    { index: 3, name: 'Bob Johnson', title: 'Python Backend Developer', location: 'Haifa, Israel' },
-                    { index: 4, name: 'Alice Brown', title: 'Full Stack Python Developer', location: 'Beer Sheva, Israel' },
-                    { index: 5, name: 'Charlie Wilson', title: 'Python Engineer', location: 'Eilat, Israel' }
-                ],
-                scrapedAt: new Date().toISOString()
-            }
+            data: results
         });
-    }, 5000); // 5 שניות simulation
+    } catch (error) {
+        scrapingResults.set(jobId, {
+            status: 'failed',
+            startedAt: scrapingResults.get(jobId).startedAt,
+            failedAt: new Date().toISOString(),
+            error: error.message
+        });
+    }
 });
 
 // בדיקת סטטוס ותוצאות

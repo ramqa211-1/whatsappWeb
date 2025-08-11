@@ -1,8 +1,5 @@
-# בסיס רשמי של Node.js
-FROM node:18-bullseye-slim
-
-# התקן curl לבריאות השירות
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+# בסיס רשמי של Playwright עם Chromium וכל ה־deps
+FROM mcr.microsoft.com/playwright:v1.46.0-jammy
 
 # הגדר תיקיית עבודה
 WORKDIR /app
@@ -19,5 +16,5 @@ ENV NODE_ENV=production
 ENV PORT=3000
 EXPOSE 3000
 
-# הפעלת האפליקציה הפשוטה
+# הפעלת האפליקציה עם Playwright
 CMD ["node", "simple_server.js"]

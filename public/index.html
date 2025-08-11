@@ -186,6 +186,11 @@
         <div class="header">
             <h1>🐍 LinkedIn Python Scraper</h1>
             <p>חילוץ מפתחי Python מ-LinkedIn בקלות</p>
+            <div style="position: absolute; top: 20px; left: 20px;">
+                <button id="logoutBtn" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer;">
+                    🚪 התנתק
+                </button>
+            </div>
         </div>
         
         <div class="form-section">
@@ -248,6 +253,18 @@
     </div>
 
     <script>
+        // בדיקת התחברות
+        if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = '/login';
+        }
+        
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            sessionStorage.removeItem('isLoggedIn');
+            sessionStorage.removeItem('username');
+            window.location.href = '/login';
+        });
+        
         let currentJobId = null;
         
         document.getElementById('scrapeForm').addEventListener('submit', async (e) => {
