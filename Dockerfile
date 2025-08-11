@@ -16,11 +16,8 @@ COPY . .
 
 # Railway מזריק את PORT בזמן ריצה
 ENV NODE_ENV=production
+ENV PORT=3000
 EXPOSE 3000
-
-# בריאות השירות
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3000/health || exit 1
 
 # הפעלת האפליקציה הפשוטה
 CMD ["node", "simple_server.js"]

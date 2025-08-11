@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 
 const app = express();
-const PORT = 3001; // Changed to avoid conflict
+const PORT = 3000; // Fixed port for both local and Railway
 
 // Basic middleware
 app.use(express.json());
