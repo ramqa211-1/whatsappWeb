@@ -201,10 +201,10 @@ app.get('/api/download/:jobId', (req, res) => {
     }
     
     const developers = result.data.developers;
-    let csvContent = 'Index,Name,Title,Location,Scraped At\\n';
+    let csvContent = 'Index,Name,Title,Location,Scraped At\n';
     
     developers.forEach(dev => {
-        csvContent += `${dev.index},"${dev.name}","${dev.title}","${dev.location}","${dev.scrapedAt}"\\n`;
+        csvContent += `${dev.index},"${dev.name}","${dev.title}","${dev.location}","${dev.scrapedAt}"\n`;
     });
     
     res.setHeader('Content-Type', 'text/csv');
@@ -223,8 +223,29 @@ setInterval(() => {
     }
 }, 60 * 60 * 1000);
 
-app.listen(PORT, () => {
+// Global error handlers
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+});
+
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 LinkedIn Scraper API running on port ${PORT}`);
-    console.log(`📍 Health check: http://localhost:${PORT}/health`);
-    console.log(`🌐 Web interface: http://localhost:${PORT}`);
+    console.log(`📍 Health check: http://0.0.0.0:${PORT}/health`);
+    console.log(`🌐 Web interface: http://0.0.0.0:${PORT}`);
+    console.log(`🚂 Railway Environment: ${process.env.RAILWAY_ENVIRONMENT || 'local'}`);
+    console.log(`📦 Node Version: ${process.version}`);
+});
+
+server.on('error', (err) => {
+    console.error('Server error:', err);
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use`);
+        process.exit(1);
+    }
 });
