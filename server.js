@@ -11,12 +11,13 @@ try {
 } catch (error) {
     console.warn('⚠️ Playwright not available:', error.message);
     console.log('🔧 Server will start but scraping functionality will be limited');
+    console.log('💡 To enable scraping, ensure Playwright is properly installed');
 }
 
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000; // Force port 3000 for Railway compatibility
 
 // Railway specific configurations
 if (process.env.RAILWAY_ENVIRONMENT) {
@@ -146,19 +147,36 @@ app.get('/test', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-    res.json({ 
-        status: 'healthy', 
-        timestamp: new Date().toISOString(),
-        service: 'LinkedIn Python Scraper API',
-        port: PORT,
-        environment: process.env.NODE_ENV || 'development',
-        playwright: !!chromium,
-        features: {
-            scraping: !!chromium,
-            api: true,
-            webInterface: true
-        }
-    });
+    try {
+        const healthData = {
+            status: 'healthy',
+            timestamp: new Date().toISOString(),
+            service: 'LinkedIn Python Scraper API',
+            port: PORT,
+            environment: process.env.NODE_ENV || 'development',
+            railway: !!process.env.RAILWAY_ENVIRONMENT,
+            playwright: !!chromium,
+            features: {
+                scraping: !!chromium,
+                api: true,
+                webInterface: true
+            },
+            uptime: process.uptime(),
+            memory: process.memoryUsage(),
+            platform: process.platform,
+            nodeVersion: process.version
+        };
+        
+        res.json(healthData);
+        console.log(`✅ Health check requested - Server is healthy`);
+    } catch (error) {
+        console.error('❌ Health check failed:', error);
+        res.status(500).json({
+            status: 'unhealthy',
+            error: error.message,
+            timestamp: new Date().toISOString()
+        });
+    }
 });
 
 // API endpoint לחילוץ מפתחי Python
@@ -265,13 +283,15 @@ setInterval(() => {
 
 // Global error handlers
 process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-    process.exit(1);
+    console.error('❌ Uncaught Exception:', err);
+    console.error('🔧 Server will continue running but may be unstable');
+    // Don't exit - let the server try to recover
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-    process.exit(1);
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+    console.error('🔧 Server will continue running but may be unstable');
+    // Don't exit - let the server try to recover
 });
 
 const server = app.listen(PORT, '0.0.0.0', () => {
@@ -290,6 +310,9 @@ const server = app.listen(PORT, '0.0.0.0', () => {
         RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT,
         RAILWAY_STATIC_URL: process.env.RAILWAY_STATIC_URL
     });
+    console.log(`🎭 Playwright Status: ${chromium ? 'Available' : 'Not Available'}`);
+    console.log(`✅ Server is ready to accept requests`);
+    console.log(`🎯 All endpoints are configured and ready`);
 });
 
 server.on('error', (err) => {

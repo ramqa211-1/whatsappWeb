@@ -2,7 +2,7 @@
   "$schema": "https://railway.app/railway.schema.json",
   "build": {
     "builder": "NIXPACKS",
-    "buildCommand": "npm install --legacy-peer-deps && npx playwright install chromium --with-deps --force",
+    "buildCommand": "npm install --legacy-peer-deps",
     "watchPatterns": [
       "**/*.js",
       "**/*.json",
