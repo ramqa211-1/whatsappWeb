@@ -1,0 +1,78 @@
+{
+  "scrapedAt": "2025-08-10T12:56:25.987Z",
+  "totalResults": 10,
+  "method": "DOM extraction + Screenshot backup",
+  "developers": [
+    {
+      "index": 1,
+      "name": "Ido Goldstein",
+      "title": "Software Developer | ML & Embedded Systems | C++ & Python",
+      "location": "Megiddo",
+      "experience": "Past: Software Developer at Rafael Advanced Defense Systems"
+    },
+    {
+      "index": 2,
+      "name": "Barr Ziv",
+      "title": "Full-Stack Developer | Python, Django, PostgreSQL, TypeScript, React",
+      "location": "Tel Aviv-Yafo",
+      "experience": "Past: QA Automation Engineer at CommBox"
+    },
+    {
+      "index": 3,
+      "name": "Aleksandr Kosarev",
+      "title": "Python Developer",
+      "location": "West Jerusalem",
+      "experience": "Junior Python Developer"
+    },
+    {
+      "index": 4,
+      "name": "Eliav Goldman",
+      "title": "Python developer",
+      "location": "Tel Aviv-Yafo",
+      "experience": "Past: Python Developer at Israel Defense Forces"
+    },
+    {
+      "index": 5,
+      "name": "Nevo Margalit",
+      "title": "Data analyst & Python developer",
+      "location": "Netanya",
+      "experience": "Python backend developer with over 3 years of experience"
+    },
+    {
+      "index": 6,
+      "name": "Dima Yevstigneyev",
+      "title": "Software Engineer | Python Developer",
+      "location": "Kiryat Motzkin",
+      "experience": "Python SDK development"
+    },
+    {
+      "index": 7,
+      "name": "Doron Leibovici",
+      "title": "Python Developer",
+      "location": "Tel Aviv-Yafo",
+      "experience": "Past: Python Developer at ArionFund"
+    },
+    {
+      "index": 8,
+      "name": "Ethan Sebag",
+      "title": "AI Engineer - Software Engineer - Python Developer",
+      "location": "Israel",
+      "experience": "Machine Learning with Python certification"
+    },
+    {
+      "index": 9,
+      "name": "Sassi Manne",
+      "title": "Software Developer | C | Python | Java",
+      "location": "Tel Aviv-Yafo",
+      "experience": "Multi-language developer"
+    },
+    {
+      "index": 10,
+      "name": "ELAD D.",
+      "title": "Python Developer & QA engineer",
+      "location": "Gedera",
+      "experience": "Python development and QA"
+    }
+  ]
+}
+

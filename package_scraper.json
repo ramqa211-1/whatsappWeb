@@ -1,0 +1,43 @@
+{
+  "name": "linkedin-python-developers-scraper",
+  "version": "1.0.0",
+  "description": "Daily LinkedIn Python Developers Scraper - חילוץ יומי של מפתחי Python מ-LinkedIn",
+  "main": "daily_python_scraper.js",
+  "scripts": {
+    "start": "node daily_python_scraper.js",
+    "schedule": "node scheduler.js",
+    "schedule-now": "node scheduler.js --run-now",
+    "install-deps": "npm install",
+    "setup": "npm install && echo 'הגדר את משתני הסביבה LINKEDIN_EMAIL ו-LINKEDIN_PASSWORD'"
+  },
+  "keywords": [
+    "linkedin",
+    "scraper",
+    "python",
+    "developers",
+    "automation",
+    "playwright",
+    "headless"
+  ],
+  "author": "Ram Walas Tal",
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.40.0",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/linkedin-python-scraper.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/linkedin-python-scraper/issues"
+  },
+  "homepage": "https://github.com/your-username/linkedin-python-scraper#readme"
+}
+

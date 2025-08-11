@@ -1,0 +1,23 @@
+# LinkedIn Credentials
+# הכנס כאן את פרטי ההתחברות שלך ל-LinkedIn
+LINKEDIN_EMAIL=your_email@gmail.com
+LINKEDIN_PASSWORD=your_password
+
+# Scraping Settings
+MAX_RESULTS_PER_DAY=20
+HEADLESS_MODE=true
+
+# Schedule Settings (Cron format)
+# Default: 9:00 AM every day
+SCHEDULE_TIME=0 9 * * *
+
+# Output Settings
+OUTPUT_DIR=linkedin_scraping_results
+EXPORT_CSV=true
+EXPORT_JSON=true
+
+# Delays (milliseconds)
+PAGE_LOAD_DELAY=2000
+SEARCH_DELAY=3000
+
+
