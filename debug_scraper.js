@@ -230,3 +230,5 @@ async function debugScrape() {
 console.log('🚀 מתחיל סקריפט דיבוג מפורט...');
 debugScrape().catch(console.error);
 
+
+

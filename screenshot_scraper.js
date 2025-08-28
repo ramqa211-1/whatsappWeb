@@ -156,3 +156,5 @@ async function screenshotScraper() {
 console.log('🚀 מתחיל סקריפט צילום מסך...');
 screenshotScraper().catch(console.error);
 
+
+

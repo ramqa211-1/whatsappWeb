@@ -17,7 +17,8 @@ try {
 require('dotenv').config();
 
 const app = express();
-const PORT = 3000; // Force port 3000 for Railway compatibility
+const PORT = process.env.PORT || 3000;
+ // Force port 3000 for Railway compatibility
 
 // Railway specific configurations
 if (process.env.RAILWAY_ENVIRONMENT) {

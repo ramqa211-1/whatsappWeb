@@ -1,4 +1,20 @@
-# 🚂 מדריך פריסה ל-Railway
+# 🚂 פריסת LinkedIn Scraper ב-Railway
+
+## ⚠️ **בעיה נפוצה - פתרון:**
+
+אם אתה מקבל שגיאה:
+```
+browserType.launch: Executable doesn't exist at /ms-playwright/chromium_headless_shell-1181/chrome-linux/headless_shell
+```
+
+**הפתרון:** גרסאות Playwright בקוד ו-Docker image חייבות להיות זהות!
+
+### 🔧 **מה תוקן:**
+- ✅ Dockerfile: `mcr.microsoft.com/playwright:v1.54.2-jammy`
+- ✅ package.json: `"playwright": "^1.54.2"`
+- ✅ package-minimal.json: `"playwright": "^1.54.2"`
+
+---
 
 ## 🎯 מה תקבל:
 - **🌐 אתר web** עם ממשק פשוט ויפה
@@ -180,4 +196,6 @@ fetch('https://your-app-name.up.railway.app/api/scrape', {
 - 📈 **סקיילבילי אוטומטי**
 
 **הלקוח מקבל פתרון מלא ומקצועי! 🎯**
+
+
 

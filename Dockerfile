@@ -1,5 +1,5 @@
 # בסיס רשמי של Playwright עם Chromium וכל ה־deps
-FROM mcr.microsoft.com/playwright:v1.46.0-jammy
+FROM mcr.microsoft.com/playwright:v1.54.2-jammy
 
 # הגדר תיקיית עבודה
 WORKDIR /app

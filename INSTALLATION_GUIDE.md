@@ -82,3 +82,5 @@ node screenshot_scraper.js
 
 **סך הכל: ~250MB + 10 דקות התקנה**
 
+
+

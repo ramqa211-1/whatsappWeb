@@ -181,3 +181,5 @@ async function manualScrape() {
 console.log('🚀 מתחיל סקריפט ידני...');
 manualScrape().catch(console.error);
 
+
+
