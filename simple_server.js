@@ -44,6 +44,20 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     });
 
+    // הגדרת viewport אמיתי
+    await page.setViewportSize({ width: 1920, height: 1080 });
+    
+    // הגדרת cookies ו-localStorage כדי להיראות כמו משתמש אמיתי
+    await page.addInitScript(() => {
+        // הגדרת localStorage
+        localStorage.setItem('li_at', 'dummy_token');
+        localStorage.setItem('JSESSIONID', 'dummy_session');
+        
+        // הגדרת cookies
+        document.cookie = 'li_at=dummy_token; domain=.linkedin.com; path=/';
+        document.cookie = 'JSESSIONID=dummy_session; domain=.linkedin.com; path=/';
+    });
+
     try {
         console.log(`🔐 ניסיון ${retryCount + 1}: מתחבר ל-LinkedIn...`);
         
@@ -62,10 +76,14 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         await page.fill('#password', password);
         await page.click('button[type="submit"]');
         
-        // המתנה פשוטה - 10 שניות אחרי לוגין
-        console.log('⏳ ממתין 10 שניות אחרי לוגין...');
-        await page.waitForTimeout(10000);
+        // המתנה מורחבת - 20 שניות אחרי לוגין (לפרוד)
+        console.log('⏳ ממתין 20 שניות אחרי לוגין...');
+        await page.waitForTimeout(20000);
         console.log('✅ המתנה הושלמה, ממשיכים...');
+        
+        // המתנה נוספת לטעינת הדף הראשי
+        console.log('⏳ ממתין לטעינת הדף הראשי...');
+        await page.waitForTimeout(5000);
         
         // חיפוש - עכשיו מחפש כל מילה שאתה מזין
         console.log(`🔍 מחפש: "${searchQuery}"...`);
@@ -77,35 +95,61 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
             timeout: 60000 
         });
         
-        console.log('⏳ ממתין 10 שניות לטעינת תוצאות החיפוש...');
-        await page.waitForTimeout(10000);
+        console.log('⏳ ממתין 15 שניות לטעינת תוצאות החיפוש...');
+        await page.waitForTimeout(15000);
         console.log('✅ המתנה הושלמה, מחלץ נתונים...');
+        
+        // המתנה נוספת לטעינת התוכן
+        console.log('⏳ ממתין לטעינת התוכן...');
+        await page.waitForTimeout(5000);
+
+        // בדיקה שהדף נטען נכון
+        const pageTitle = await page.title();
+        const pageUrl = page.url();
+        console.log(`📄 כותרת הדף: ${pageTitle}`);
+        console.log(`🔗 URL נוכחי: ${pageUrl}`);
+        
+        // בדיקה אם יש תוכן בדף
+        const pageContent = await page.content();
+        console.log(`📊 גודל תוכן הדף: ${pageContent.length} תווים`);
 
         // חילוץ נתונים אמיתיים - עכשיו לוקח את כל התוצאות
         console.log('📊 מחלץ נתונים מהדף...');
         const developers = await page.evaluate(() => {
             const results = [];
-            const cards = document.querySelectorAll('[data-view-name="search-entity-result-universal-template"]');
             
-            console.log(`🔍 נמצאו ${cards.length} כרטיסי תוצאות`);
+            // נסיון ראשון - אלמנטים סטנדרטיים
+            let cards = document.querySelectorAll('[data-view-name="search-entity-result-universal-template"]');
+            console.log(`🔍 נסיון ראשון - נמצאו ${cards.length} כרטיסי תוצאות`);
             
-            // לוג נוסף לדיבוג
+            // אם לא נמצאו, נסיון שני - אלמנטים חלופיים
             if (cards.length === 0) {
-                console.log('⚠️ לא נמצאו כרטיסי תוצאות!');
-                console.log('🔍 מחפש אלמנטים אחרים...');
+                console.log('⚠️ לא נמצאו כרטיסי תוצאות סטנדרטיים!');
+                console.log('🔍 מחפש אלמנטים חלופיים...');
                 
-                // נסיון למצוא אלמנטים אחרים
-                const alternativeCards = document.querySelectorAll('.search-result__info');
-                console.log(`🔍 אלמנטים חלופיים: ${alternativeCards.length}`);
+                cards = document.querySelectorAll('.search-result__info, .search-result, .result-card');
+                console.log(`🔍 נסיון שני - אלמנטים חלופיים: ${cards.length}`);
+            }
+            
+            // אם עדיין לא נמצאו, נסיון שלישי - כל האלמנטים עם טקסט
+            if (cards.length === 0) {
+                console.log('⚠️ לא נמצאו אלמנטים חלופיים!');
+                console.log('🔍 מחפש כל האלמנטים עם טקסט...');
                 
-                const allDivs = document.querySelectorAll('div');
-                console.log(`🔍 סה"כ divs בדף: ${allDivs.length}`);
+                const allElements = document.querySelectorAll('div, li, article');
+                cards = Array.from(allElements).filter(el => {
+                    const text = el.innerText || el.textContent || '';
+                    return text.length > 20 && text.includes(' ') && !text.includes('LinkedIn');
+                });
+                console.log(`🔍 נסיון שלישי - אלמנטים עם טקסט: ${cards.length}`);
             }
             
             cards.forEach((card, index) => {
                 try {
                     const allText = card.innerText || card.textContent || '';
                     const lines = allText.split('\n').filter(line => line.trim().length > 0);
+                    
+                    console.log(`📝 כרטיס ${index + 1}: ${lines.slice(0, 3).join(' | ')}`);
                     
                     if (lines.length >= 2) {
                         const name = lines[0].trim();
@@ -115,7 +159,9 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
                             !line.includes('Connect') && 
                             !line.includes('View') &&
                             !line.includes('Message') &&
-                            !line.includes('Follow')
+                            !line.includes('Follow') &&
+                            !line.includes('LinkedIn') &&
+                            !line.includes('Search')
                         ) || lines[1];
                         
                         const location = lines.find(line => 
@@ -127,7 +173,7 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
                             line.toLowerCase().includes('usa')
                         ) || 'N/A';
 
-                        if (name && name.length > 2 && !name.includes('Connect') && !name.includes('View')) {
+                        if (name && name.length > 2 && !name.includes('Connect') && !name.includes('View') && !name.includes('LinkedIn')) {
                             results.push({
                                 index: index + 1,
                                 name: name,
@@ -146,6 +192,17 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         });
 
         console.log(`✅ חילוץ הושלם! נמצאו ${developers.length} תוצאות`);
+        
+        // בדיקה אם LinkedIn חסם אותנו
+        if (developers.length === 0) {
+            const pageText = await page.textContent('body');
+            if (pageText.includes('captcha') || pageText.includes('verify') || pageText.includes('blocked')) {
+                console.log('🚨 LinkedIn דורש אימות או חסם אותנו!');
+                await page.screenshot({ path: 'linkedin_blocked.png', fullPage: true });
+                console.log('📸 צילום מסך נשמר: linkedin_blocked.png');
+            }
+        }
+        
         await browser.close();
         
         return {
