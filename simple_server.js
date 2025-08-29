@@ -28,7 +28,7 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
     }
 
     const browser = await chromium.launch({
-        headless: false, // שינוי ל-false כדי לראות מה קורה
+        headless: true, // בדוקר חייב להיות true
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -38,8 +38,19 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
             '--no-zygote',
             '--disable-gpu',
             '--disable-web-security',
-            '--disable-features=VizDisplayCompositor',
-            '--disable-blink-features=AutomationControlled'
+            '--disable-features=VizDisplayComitor',
+            '--disable-blink-features=AutomationControlled',
+            '--disable-xvfb',
+            '--disable-software-rasterizer',
+            '--disable-extensions',
+            '--disable-plugins',
+            '--disable-images',
+            '--disable-javascript',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-features=TranslateUI',
+            '--disable-ipc-flooding-protection'
         ]
     });
 
