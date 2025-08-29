@@ -23,21 +23,59 @@ let scrapingResults = new Map();
 
 // פונקציה לביצוע פעולות רנדומליות כמו משתמש אמיתי
 async function performRandomUserAction(page) {
+    console.log('🎲 מתחיל בחירת פעולה רנדומלית...');
+    
+    // בדיקת מצב הדף לפני הפעולה
+    try {
+        const currentUrl = page.url();
+        const currentTitle = await page.title();
+        console.log(`📍 URL נוכחי לפני פעולה רנדומלית: ${currentUrl}`);
+        console.log(`📄 כותרת נוכחית לפני פעולה רנדומלית: ${currentTitle}`);
+    } catch (error) {
+        console.log('⚠️ לא הצלחתי לבדוק מצב הדף:', error.message);
+    }
+    
     const actions = [
         {
             name: 'לחיצה על פרופיל שלי',
             selector: 'a[href*="/in/"], .global-nav__me-photo, .nav-item__profile-member-photo',
             probability: 0.3,
             action: async (selector) => {
+                console.log('🔍 מחפש קישור לפרופיל שלי...');
                 const profileLink = await page.$(selector);
                 if (profileLink) {
+                    console.log('✅ נמצא קישור לפרופיל שלי');
                     console.log('👤 לוחץ על פרופיל שלי...');
-                    await profileLink.click();
-                    await page.waitForTimeout(3000 + Math.random() * 5000); // 3-8 שניות
-                    console.log('✅ הגעתי לפרופיל שלי');
-                    return true;
+                    
+                    try {
+                        await profileLink.click();
+                        console.log('✅ לחיצה על פרופיל בוצעה');
+                        
+                        const waitTime = 3000 + Math.random() * 5000; // 3-8 שניות
+                        console.log(`⏳ ממתין ${Math.round(waitTime/1000)} שניות אחרי לחיצה על פרופיל...`);
+                        await page.waitForTimeout(waitTime);
+                        
+                        // בדיקת מצב הדף אחרי הפעולה
+                        const newUrl = page.url();
+                        const newTitle = await page.title();
+                        console.log(`📍 URL חדש אחרי לחיצה על פרופיל: ${newUrl}`);
+                        console.log(`📄 כותרת חדשה אחרי לחיצה על פרופיל: ${newTitle}`);
+                        
+                        if (newUrl.includes('/in/')) {
+                            console.log('✅ הגעתי לפרופיל שלי בהצלחה');
+                        } else {
+                            console.log('⚠️ לא הגעתי לפרופיל שלי - URL לא השתנה');
+                        }
+                        
+                        return true;
+                    } catch (error) {
+                        console.log('❌ שגיאה בלחיצה על פרופיל:', error.message);
+                        return false;
+                    }
+                } else {
+                    console.log('⚠️ לא נמצא קישור לפרופיל שלי');
+                    return false;
                 }
-                return false;
             }
         },
         {
@@ -45,16 +83,49 @@ async function performRandomUserAction(page) {
             selector: '.feed-shared-update-v2, .feed-shared-text, .feed-shared-update-v2__description',
             probability: 0.4,
             action: async (selector) => {
+                console.log('🔍 מחפש פוסטים בפיד...');
                 const posts = await page.$$(selector);
+                console.log(`📊 נמצאו ${posts.length} פוסטים בפיד`);
+                
                 if (posts.length > 0) {
-                    const randomPost = posts[Math.floor(Math.random() * Math.min(2, posts.length))];
-                    console.log('📝 לוחץ על פוסט בפיד...');
-                    await randomPost.click();
-                    await page.waitForTimeout(2000 + Math.random() * 3000); // 2-5 שניות
-                    console.log('✅ ליחצתי על פוסט בפיד');
-                    return true;
+                    const postIndex = Math.floor(Math.random() * Math.min(2, posts.length));
+                    console.log(`📝 בוחר פוסט מספר ${postIndex + 1} מתוך ${posts.length}`);
+                    
+                    try {
+                        // בדיקת תוכן הפוסט לפני לחיצה
+                        const postText = await posts[postIndex].textContent();
+                        const shortText = postText ? postText.substring(0, 100) + '...' : 'לא ניתן לקרוא';
+                        console.log(`📝 תוכן הפוסט שנבחר: ${shortText}`);
+                        
+                        console.log('📝 לוחץ על פוסט בפיד...');
+                        await posts[postIndex].click();
+                        console.log('✅ לחיצה על פוסט בוצעה');
+                        
+                        const waitTime = 2000 + Math.random() * 3000; // 2-5 שניות
+                        console.log(`⏳ ממתין ${Math.round(waitTime/1000)} שניות אחרי לחיצה על פוסט...`);
+                        await page.waitForTimeout(waitTime);
+                        
+                        // בדיקת מצב הדף אחרי הפעולה
+                        const newUrl = page.url();
+                        const newTitle = await page.title();
+                        console.log(`📍 URL חדש אחרי לחיצה על פוסט: ${newUrl}`);
+                        console.log(`📄 כותרת חדשה אחרי לחיצה על פוסט: ${newTitle}`);
+                        
+                        if (newUrl !== page.url()) {
+                            console.log('✅ ניווט לפוסט בוצע בהצלחה');
+                        } else {
+                            console.log('⚠️ לא היה ניווט לפוסט - ייתכן שהפוסט נפתח באותו דף');
+                        }
+                        
+                        return true;
+                    } catch (error) {
+                        console.log('❌ שגיאה בלחיצה על פוסט:', error.message);
+                        return false;
+                    }
+                } else {
+                    console.log('⚠️ לא נמצאו פוסטים בפיד');
+                    return false;
                 }
-                return false;
             }
         },
         {
@@ -113,15 +184,42 @@ async function performRandomUserAction(page) {
                         if (Math.random() < 0.7) { // 70% מהמקרים
                             console.log('🏠 חוזר לדף הראשי...');
                             try {
+                                console.log('🌐 נווט לדף הראשי: https://www.linkedin.com/feed/');
                                 await page.goto('https://www.linkedin.com/feed/', { 
                                     waitUntil: 'domcontentloaded',
                                     timeout: 30000 
                                 });
-                                await page.waitForTimeout(2000 + Math.random() * 3000); // 2-5 שניות
-                                console.log('✅ חזרתי לדף הראשי');
+                                console.log('✅ ניווט לדף הראשי הושלם');
+                                
+                                const waitTime = 2000 + Math.random() * 3000; // 2-5 שניות
+                                console.log(`⏳ ממתין ${Math.round(waitTime/1000)} שניות אחרי חזרה לדף הראשי...`);
+                                await page.waitForTimeout(waitTime);
+                                
+                                // בדיקת מצב הדף אחרי חזרה
+                                const finalUrl = page.url();
+                                const finalTitle = await page.title();
+                                console.log(`📍 URL סופי אחרי חזרה לדף הראשי: ${finalUrl}`);
+                                console.log(`📄 כותרת סופית אחרי חזרה לדף הראשי: ${finalTitle}`);
+                                
+                                if (finalUrl.includes('/feed/')) {
+                                    console.log('✅ חזרתי לדף הראשי בהצלחה');
+                                } else {
+                                    console.log('⚠️ לא חזרתי לדף הראשי - URL לא נכון');
+                                }
                             } catch (error) {
-                                console.log('⚠️ לא הצלחתי לחזור לדף הראשי:', error.message);
+                                console.log('❌ שגיאה בחזרה לדף הראשי:', error.message);
+                                console.log('🔍 מנסה לבדוק איפה אני עכשיו...');
+                                try {
+                                    const currentUrl = page.url();
+                                    const currentTitle = await page.title();
+                                    console.log(`📍 URL נוכחי אחרי שגיאה: ${currentUrl}`);
+                                    console.log(`📄 כותרת נוכחית אחרי שגיאה: ${currentTitle}`);
+                                } catch (urlError) {
+                                    console.log('⚠️ לא הצלחתי לבדוק URL נוכחי:', urlError.message);
+                                }
                             }
+                        } else {
+                            console.log('🎲 לא חוזר לדף הראשי (30% מהמקרים)');
                         }
                         return;
                     }
@@ -223,40 +321,93 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         try {
             console.log('🔍 נסיון ראשון: מחפש דרך הדף הראשי...');
             
+            // בדיקת מצב הדף לפני חיפוש
+            const beforeSearchUrl = page.url();
+            const beforeSearchTitle = await page.title();
+            console.log(`📍 URL לפני חיפוש: ${beforeSearchUrl}`);
+            console.log(`📄 כותרת לפני חיפוש: ${beforeSearchTitle}`);
+            
             // לחץ על כפתור החיפוש אם קיים
+            console.log('🔍 מחפש שדה חיפוש בדף הראשי...');
             const searchButton = await page.$('input[placeholder*="Search"], input[aria-label*="Search"], .search-global-typeahead__input');
+            
             if (searchButton) {
-                console.log('🔍 נמצא שדה חיפוש בדף הראשי');
-                await searchButton.click();
-                await page.waitForTimeout(2000);
-                await searchButton.fill(searchQuery);
-                await page.waitForTimeout(2000);
-                await page.keyboard.press('Enter');
-                console.log('✅ חיפוש בוצע דרך הדף הראשי');
+                console.log('✅ נמצא שדה חיפוש בדף הראשי');
+                
+                try {
+                    console.log('🔍 לוחץ על שדה החיפוש...');
+                    await searchButton.click();
+                    console.log('✅ לחיצה על שדה החיפוש בוצעה');
+                    
+                    console.log('⏳ ממתין 2 שניות אחרי לחיצה...');
+                    await page.waitForTimeout(2000);
+                    
+                    console.log(`🔍 ממלא טקסט חיפוש: "${searchQuery}"...`);
+                    await searchButton.fill(searchQuery);
+                    console.log('✅ טקסט חיפוש הוזן');
+                    
+                    console.log('⏳ ממתין 2 שניות אחרי הזנת טקסט...');
+                    await page.waitForTimeout(2000);
+                    
+                    console.log('🔍 לוחץ Enter לביצוע החיפוש...');
+                    await page.keyboard.press('Enter');
+                    console.log('✅ Enter נלחץ - החיפוש מתבצע...');
+                    
+                    console.log('✅ חיפוש בוצע דרך הדף הראשי');
+                } catch (searchError) {
+                    console.log('❌ שגיאה בביצוע החיפוש דרך הדף הראשי:', searchError.message);
+                    throw searchError;
+                }
             } else {
-                console.log('⚠️ לא נמצא שדה חיפוש בדף הראשי, מנסה URL ישיר...');
+                console.log('⚠️ לא נמצא שדה חיפוש בדף הראשי');
+                console.log('🔍 מנסה למצוא אלמנטים חלופיים...');
+                
+                // נסיון למצוא אלמנטים חלופיים
+                const alternativeSelectors = [
+                    'input[type="text"]',
+                    '.search-input',
+                    '[data-control-name="search_query"]'
+                ];
+                
+                for (const altSelector of alternativeSelectors) {
+                    const altElement = await page.$(altSelector);
+                    if (altElement) {
+                        console.log(`✅ נמצא אלמנט חלופי: ${altSelector}`);
+                        break;
+                    }
+                }
+                
                 throw new Error('לא נמצא שדה חיפוש');
             }
         } catch (error) {
             console.log('🔍 נסיון שני: נווט ישיר ל-URL חיפוש...');
-            const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(searchQuery)}`;
+            console.log(`⚠️ הסיבה לכישלון נסיון ראשון: ${error.message}`);
             
+            const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(searchQuery)}`;
             console.log(`🌐 נווט ל-URL חיפוש: ${searchUrl}`);
             
             // נסיון עם waitUntil: 'networkidle' במקום 'domcontentloaded'
             try {
+                console.log('🔍 נסיון עם networkidle...');
                 await page.goto(searchUrl, { 
                     waitUntil: 'networkidle',
                     timeout: 60000 
                 });
                 console.log('✅ הגעתי לעמוד תוצאות החיפוש עם networkidle');
             } catch (redirectError) {
-                console.log('⚠️ networkidle נכשל, מנסה עם domcontentloaded...');
-                await page.goto(searchUrl, { 
-                    waitUntil: 'domcontentloaded',
-                    timeout: 60000 
-                });
-                console.log('✅ הגעתי לעמוד תוצאות החיפוש עם domcontentloaded');
+                console.log('⚠️ networkidle נכשל:', redirectError.message);
+                console.log('🔍 נסיון עם domcontentloaded...');
+                
+                try {
+                    await page.goto(searchUrl, { 
+                        waitUntil: 'domcontentloaded',
+                        timeout: 60000 
+                    });
+                    console.log('✅ הגעתי לעמוד תוצאות החיפוש עם domcontentloaded');
+                } catch (domError) {
+                    console.log('❌ גם domcontentloaded נכשל:', domError.message);
+                    throw domError;
+                }
             }
         }
         
