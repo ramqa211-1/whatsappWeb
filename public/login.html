@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LinkedIn Python Scraper - Login</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
     <style>
         * {
             margin: 0;
@@ -73,6 +74,43 @@
             border-color: #0077b5;
         }
         
+        .password-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .password-container input[type="password"],
+        .password-container input[type="text"] {
+            flex: 1;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        
+        .password-toggle {
+            background: #f8f9fa;
+            border: 2px solid #e1e5e9;
+            border-left: none;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            padding: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            min-width: 50px;
+        }
+        
+        .password-toggle:hover {
+            background: #e9ecef;
+            border-color: #0077b5;
+        }
+        
+        .password-toggle:focus {
+            outline: none;
+            border-color: #0077b5;
+            box-shadow: 0 0 0 3px rgba(0,119,181,0.1);
+        }
+        
         .btn {
             background: linear-gradient(135deg, #0077b5 0%, #005885 100%);
             color: white;
@@ -128,8 +166,13 @@
                 
                 <div class="form-group">
                     <label for="password">🔒 סיסמה:</label>
-                    <input type="password" id="password" name="password" required 
-                           placeholder="הזן סיסמה">
+                    <div class="password-container">
+                        <input type="password" id="password" name="password" required 
+                               placeholder="הזן סיסמה">
+                        <button type="button" class="password-toggle" id="passwordToggle" title="הצג/הסתר סיסמה">
+                            👁️
+                        </button>
+                    </div>
                 </div>
                 
                 <button type="submit" class="btn">
@@ -144,6 +187,24 @@
     </div>
 
     <script>
+        // פונקציונליות הצגה/הסתרה של הסיסמה
+        const passwordToggle = document.getElementById('passwordToggle');
+        const passwordInput = document.getElementById('password');
+        
+        if (passwordToggle && passwordInput) {
+            passwordToggle.addEventListener('click', function() {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    passwordToggle.textContent = '🙈';
+                    passwordToggle.title = 'הסתר סיסמה';
+                } else {
+                    passwordInput.type = 'password';
+                    passwordToggle.textContent = '👁️';
+                    passwordToggle.title = 'הצג סיסמה';
+                }
+            });
+        }
+        
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             

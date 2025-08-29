@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LinkedIn Python Developers Scraper</title>
+    <title>חיפוש מועמדים בלינקדאין</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
     <style>
         * {
             margin: 0;
@@ -71,6 +72,48 @@
         .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #0077b5;
+            box-shadow: 0 0 0 3px rgba(0,119,181,0.1);
+        }
+        
+        .form-group input[type="text"] {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .password-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .password-container input[type="password"],
+        .password-container input[type="text"] {
+            flex: 1;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+        
+        .password-toggle {
+            background: #f8f9fa;
+            border: 2px solid #e1e5e9;
+            border-left: none;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            padding: 15px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            min-width: 50px;
+        }
+        
+        .password-toggle:hover {
+            background: #e9ecef;
+            border-color: #0077b5;
+        }
+        
+        .password-toggle:focus {
+            outline: none;
+            border-color: #0077b5;
+            box-shadow: 0 0 0 3px rgba(0,119,181,0.1);
         }
         
         .btn {
@@ -116,11 +159,48 @@
             color: #155724;
         }
         
-        .status.failed {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
+                 .status.failed {
+             background: #f8d7da;
+             border: 1px solid #f5c6cb;
+             color: #721c24;
+         }
+         
+         .status button {
+             margin-top: 15px;
+             width: auto;
+             padding: 10px 20px;
+             font-size: 14px;
+             animation: buttonGlow 2s ease-in-out infinite;
+             position: relative;
+             overflow: hidden;
+         }
+         
+         .status button::before {
+             content: '';
+             position: absolute;
+             top: 0;
+             left: -100%;
+             width: 100%;
+             height: 100%;
+             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+             animation: buttonShine 2s ease-in-out infinite;
+         }
+         
+         @keyframes buttonGlow {
+             0%, 100% { 
+                 box-shadow: 0 4px 8px rgba(40,167,69,0.3);
+                 transform: scale(1);
+             }
+             50% { 
+                 box-shadow: 0 6px 12px rgba(40,167,69,0.5);
+                 transform: scale(1.02);
+             }
+         }
+         
+         @keyframes buttonShine {
+             0% { left: -100%; }
+             100% { left: 100%; }
+         }
         
         .results {
             margin-top: 20px;
@@ -179,13 +259,219 @@
             background: #f8f9fa;
             color: #666;
         }
+        
+                 /* Progress Loader Styles */
+         .progress-loader {
+             margin-top: 30px;
+             padding: 30px;
+             background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+             border-radius: 15px;
+             border: 2px solid #e9ecef;
+             position: relative;
+             overflow: hidden;
+         }
+         
+         /* Animated Background */
+         .progress-loader::before {
+             content: '';
+             position: absolute;
+             top: 0;
+             left: -100%;
+             width: 100%;
+             height: 100%;
+             background: linear-gradient(90deg, transparent, rgba(0,119,181,0.1), transparent);
+             animation: shimmer 2s infinite;
+         }
+         
+         @keyframes shimmer {
+             0% { left: -100%; }
+             100% { left: 100%; }
+         }
+        
+        .progress-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+                 .progress-fill {
+             height: 100%;
+             background: linear-gradient(90deg, #0077b5, #00a0dc, #0077b5);
+             background-size: 200% 100%;
+             border-radius: 10px;
+             width: 0%;
+             transition: width 0.5s ease-in-out;
+             box-shadow: 0 2px 4px rgba(0,119,181,0.3);
+             position: relative;
+             animation: progressGlow 2s ease-in-out infinite;
+         }
+         
+         .progress-fill::after {
+             content: '';
+             position: absolute;
+             top: 0;
+             left: 0;
+             right: 0;
+             bottom: 0;
+             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+             animation: progressShine 1.5s ease-in-out infinite;
+         }
+         
+         @keyframes progressGlow {
+             0%, 100% { background-position: 0% 50%; }
+             50% { background-position: 100% 50%; }
+         }
+         
+         @keyframes progressShine {
+             0% { transform: translateX(-100%); }
+             100% { transform: translateX(100%); }
+         }
+        
+                 .progress-text {
+             font-size: 18px;
+             font-weight: 600;
+             color: #0077b5;
+             animation: textPulse 1.5s ease-in-out infinite;
+             text-shadow: 0 0 10px rgba(0,119,181,0.3);
+         }
+         
+         @keyframes textPulse {
+             0%, 100% { transform: scale(1); }
+             50% { transform: scale(1.05); }
+         }
+        
+        .progress-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+                 .step {
+             padding: 15px;
+             background: white;
+             border-radius: 10px;
+             text-align: center;
+             border: 2px solid #e9ecef;
+             transition: all 0.3s ease;
+             font-weight: 500;
+             color: #666;
+             animation: stepFloat 3s ease-in-out infinite;
+         }
+         
+         .step:nth-child(1) { animation-delay: 0s; }
+         .step:nth-child(2) { animation-delay: 0.5s; }
+         .step:nth-child(3) { animation-delay: 1s; }
+         .step:nth-child(4) { animation-delay: 1.5s; }
+         
+         @keyframes stepFloat {
+             0%, 100% { 
+                 transform: translateY(0);
+                 box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+             }
+             50% { 
+                 transform: translateY(-3px);
+                 box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+             }
+         }
+        
+                 .step.active {
+             border-color: #0077b5;
+             background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+             color: #0077b5;
+             transform: translateY(-2px);
+             box-shadow: 0 4px 8px rgba(0,119,181,0.2);
+             animation: activeStep 2s ease-in-out infinite;
+             position: relative;
+         }
+         
+         .step.active::before {
+             content: '✨';
+             position: absolute;
+             top: -10px;
+             right: -10px;
+             font-size: 20px;
+             animation: sparkle 1.5s ease-in-out infinite;
+         }
+         
+         @keyframes activeStep {
+             0%, 100% { 
+                 transform: translateY(-2px) scale(1);
+                 box-shadow: 0 4px 8px rgba(0,119,181,0.2);
+             }
+             50% { 
+                 transform: translateY(-4px) scale(1.02);
+                 box-shadow: 0 6px 12px rgba(0,119,181,0.3);
+             }
+         }
+         
+         @keyframes sparkle {
+             0%, 100% { 
+                 transform: scale(1) rotate(0deg);
+                 opacity: 1;
+             }
+             50% { 
+                 transform: scale(1.2) rotate(180deg);
+                 opacity: 0.7;
+             }
+         }
+        
+                 .step.completed {
+             border-color: #28a745;
+             background: linear-gradient(135deg, #d4edda, #c3e6cb);
+             color: #155724;
+             animation: completedStep 0.8s ease-out;
+             position: relative;
+         }
+         
+         .step.completed::before {
+             content: '✅ ';
+             animation: checkmarkBounce 0.6s ease-out 0.2s both;
+             display: inline-block;
+         }
+         
+         @keyframes completedStep {
+             0% { 
+                 transform: scale(0.8);
+                 opacity: 0.5;
+             }
+             50% { 
+                 transform: scale(1.1);
+             }
+             100% { 
+                 transform: scale(1);
+                 opacity: 1;
+             }
+         }
+         
+         @keyframes checkmarkBounce {
+             0% { 
+                 transform: scale(0) rotate(-45deg);
+                 opacity: 0;
+             }
+             50% { 
+                 transform: scale(1.2) rotate(0deg);
+             }
+             100% { 
+                 transform: scale(1) rotate(0deg);
+                 opacity: 1;
+             }
+         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🐍 LinkedIn Python Scraper</h1>
-            <p>חילוץ מפתחי Python מ-LinkedIn בקלות</p>
+            <h1>🐍 חיפוש מועמדים בלינקדאין</h1>
+            <p>חיפוש מועמדים בלינקדאין בצי'ק וצ'אק</p>
             <div style="position: absolute; top: 20px; left: 20px;">
                 <button id="logoutBtn" style="background: rgba(255,255,255,0.2); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer;">
                     🚪 התנתק
@@ -195,36 +481,37 @@
         
         <div class="form-section">
             <form id="scrapeForm">
-                <div class="form-group">
-                    <label for="email">📧 LinkedIn Email:</label>
-                    <input type="email" id="email" name="email" required 
-                           placeholder="your-email@gmail.com">
-                </div>
+                                 <div class="form-group">
+                     <label for="email">📧 LinkedIn Email:</label>
+                     <input type="email" id="email" name="email" required 
+                            placeholder="your-email@gmail.com">
+                     <div id="searchCountInfo" style="font-size: 12px; color: #666; margin-top: 5px; font-style: italic;"></div>
+                 </div>
                 
                 <div class="form-group">
                     <label for="password">🔒 LinkedIn Password:</label>
-                    <input type="password" id="password" name="password" required 
-                           placeholder="הסיסמה שלך">
+                    <div class="password-container">
+                        <input type="password" id="password" name="password" required 
+                               placeholder="הסיסמה שלך">
+                        <button type="button" class="password-toggle" id="passwordToggle" title="הצג/הסתר סיסמה">
+                            👁️
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="form-group">
                     <label for="searchQuery">🔍 מילות חיפוש:</label>
-                    <select id="searchQuery" name="searchQuery">
-                        <option value="Python Developer">Python Developer</option>
-                        <option value="Senior Python Developer">Senior Python Developer</option>
-                        <option value="Python Backend Developer">Python Backend Developer</option>
-                        <option value="Full Stack Python Developer">Full Stack Python Developer</option>
-                        <option value="Django Developer">Django Developer</option>
-                        <option value="Flask Developer">Flask Developer</option>
-                    </select>
+                    <input type="text" id="searchQuery" name="searchQuery" 
+                           placeholder="למשל: Python Developer, QA Engineer, DevOps Engineer, Data Scientist, React Developer" 
+                           value="Python Developer" required>
                 </div>
                 
                 <div class="form-group">
                     <label for="maxResults">📊 מספר תוצאות מקסימלי:</label>
                     <select id="maxResults" name="maxResults">
-                        <option value="10">10 מפתחים</option>
-                        <option value="20" selected>20 מפתחים</option>
-                        <option value="50">50 מפתחים</option>
+                        <option value="10">10</option>
+                        <option value="20" selected>20</option>
+                        <option value="50">50</option>
                     </select>
                 </div>
                 
@@ -234,16 +521,38 @@
                 </button>
             </form>
             
-            <div class="status" id="status">
-                <div id="statusMessage"></div>
+                         <div class="status" id="status">
+                 <div id="statusMessage"></div>
+                 <button class="btn" id="statusNewSearchBtn" style="display: none; background: linear-gradient(135deg, #28a745, #20c997); margin-top: 15px; width: auto; padding: 10px 20px;">
+                     🔄 חיפוש חדש
+                 </button>
+             </div>
+            
+            <!-- Progress Loader -->
+            <div class="progress-loader" id="progressLoader" style="display: none;">
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+                <div class="progress-steps">
+                    <div class="step active" id="step1">🔐 התחברות ל-LinkedIn</div>
+                    <div class="step" id="step2">🔍 מאתר תוצאות</div>
+                    <div class="step" id="step3">📊 חילוץ נתונים</div>
+                    <div class="step" id="step4">✅ סיום</div>
+                </div>
             </div>
             
             <div class="results" id="results">
                 <h3>📋 תוצאות:</h3>
                 <div id="developersList"></div>
-                <button class="btn download-btn" id="downloadBtn" style="display: none;">
-                    💾 הורד כ-CSV
-                </button>
+                                 <button class="btn download-btn" id="downloadBtn" style="display: none;">
+                     💾 הורד כ-CSV
+                 </button>
+                 <button class="btn" id="newSearchBtn" style="display: none; background: linear-gradient(135deg, #28a745, #20c997); margin-top: 15px;">
+                     🔄 חיפוש חדש
+                 </button>
             </div>
         </div>
         
@@ -257,6 +566,85 @@
         if (sessionStorage.getItem('isLoggedIn') !== 'true') {
             window.location.href = '/login';
         }
+        
+        // פונקציונליות הצגה/הסתרה של הסיסמה
+        const passwordToggle = document.getElementById('passwordToggle');
+        const passwordInput = document.getElementById('password');
+        
+        if (passwordToggle && passwordInput) {
+            passwordToggle.addEventListener('click', function() {
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    passwordToggle.textContent = '🙈';
+                    passwordToggle.title = 'הסתר סיסמה';
+                } else {
+                    passwordInput.type = 'password';
+                    passwordToggle.textContent = '👁️';
+                    passwordToggle.title = 'הצג סיסמה';
+                }
+            });
+        }
+        
+        // שמירת ערך החיפוש האחרון
+        const searchQueryInput = document.getElementById('searchQuery');
+        const savedQuery = sessionStorage.getItem('lastSearchQuery');
+        if (savedQuery) {
+            searchQueryInput.value = savedQuery;
+        }
+        
+        // שמירת ערך החיפוש בעת שינוי
+        searchQueryInput.addEventListener('input', function() {
+            sessionStorage.setItem('lastSearchQuery', this.value);
+        });
+        
+        // שמירת פרטי התחברות ל-4 החיפושים הראשונים
+        const emailInput = document.getElementById('email');
+        
+        // טעינת פרטי התחברות שמורים
+        const savedEmail = sessionStorage.getItem('linkedinEmail');
+        const savedPassword = sessionStorage.getItem('linkedinPassword');
+        const searchCount = parseInt(sessionStorage.getItem('searchCount') || '0');
+        
+        if (savedEmail && searchCount < 4) {
+            emailInput.value = savedEmail;
+        }
+        
+        if (savedPassword && searchCount < 4) {
+            passwordInput.value = savedPassword;
+        }
+        
+        // שמירת פרטי התחברות בעת שינוי
+        emailInput.addEventListener('input', function() {
+            if (searchCount < 4) {
+                sessionStorage.setItem('linkedinEmail', this.value);
+            }
+        });
+        
+        passwordInput.addEventListener('input', function() {
+            if (searchCount < 4) {
+                sessionStorage.setItem('linkedinPassword', this.value);
+            }
+        });
+        
+        // פונקציה לעדכון מידע על מספר החיפושים
+        function updateSearchCountInfo() {
+            const searchCountInfo = document.getElementById('searchCountInfo');
+            const currentCount = parseInt(sessionStorage.getItem('searchCount') || '0');
+            const remainingSearches = 4 - currentCount;
+            
+            if (searchCountInfo) {
+                if (remainingSearches > 0) {
+                    searchCountInfo.innerHTML = `💾 פרטי התחברות יישמרו ל-${remainingSearches} חיפושים נוספים`;
+                    searchCountInfo.style.color = '#28a745';
+                } else {
+                    searchCountInfo.innerHTML = `⚠️ פרטי התחברות לא יישמרו יותר - תצטרך להזין מחדש`;
+                    searchCountInfo.style.color = '#dc3545';
+                }
+            }
+        }
+        
+        // עדכון מידע על מספר החיפושים בטעינת הדף
+        updateSearchCountInfo();
         
         // Logout functionality
         document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -277,10 +665,20 @@
             const loading = document.getElementById('loading');
             const status = document.getElementById('status');
             
+            // בדיקה שהאלמנטים קיימים
+            if (!scrapeBtn || !loading || !status) {
+                console.error('אלמנטים לא נמצאו:', { scrapeBtn, loading, status });
+                return;
+            }
+            
             // הצגת מצב טעינה
             scrapeBtn.disabled = true;
             loading.style.display = 'inline-block';
             scrapeBtn.innerHTML = '🔄 מחלץ נתונים... <span class="loading"></span>';
+            
+            // הצגת loader עם התקדמות
+            showProgressLoader();
+            startScrapeTimer();
             
             try {
                 const response = await fetch('/api/scrape', {
@@ -295,15 +693,18 @@
                 
                 if (result.success) {
                     currentJobId = result.jobId;
-                    showStatus('running', 'החילוץ החל... זה יקח כ-2-3 דקות');
+                    showStatus('running', 'החיפוש החל! זה יכול לקחת 2-5 דקות. אנא המתן...');
                     
                     // בדיקת סטטוס כל 10 שניות
                     checkStatus();
                 } else {
                     showStatus('failed', result.error);
+                    hideProgressLoader();
                 }
             } catch (error) {
-                showStatus('failed', 'שגיאה בתקשורת עם השרת');
+                console.error('שגיאה בתקשורת עם השרת:', error);
+                showStatus('failed', `שגיאה בתקשורת עם השרת: ${error.message}`);
+                hideProgressLoader();
             } finally {
                 scrapeBtn.disabled = false;
                 loading.style.display = 'none';
@@ -318,32 +719,111 @@
                 const response = await fetch(`/api/results/${currentJobId}`);
                 const result = await response.json();
                 
-                if (result.status === 'completed') {
-                    showStatus('completed', `הושלם! נמצאו ${result.data.totalResults} מפתחים`);
-                    displayResults(result.data.developers);
-                    showDownloadButton();
-                } else if (result.status === 'failed') {
+                                 if (result.status === 'completed') {
+                     showStatus('completed', `הושלם! נמצאו ${result.data.totalResults} מפתחים`);
+                     displayResults(result.data.developers);
+                     showDownloadButton();
+                     hideProgressLoader();
+                     
+                     // עדכון מונה החיפושים
+                     const currentSearchCount = parseInt(sessionStorage.getItem('searchCount') || '0');
+                     const newSearchCount = currentSearchCount + 1;
+                     sessionStorage.setItem('searchCount', newSearchCount.toString());
+                     
+                     // הצגת הודעת הצלחה
+                     console.log('החיפוש הושלם בהצלחה!');
+                     console.log(`זה היה החיפוש מספר ${newSearchCount} מתוך 4`);
+                     
+                     // אם זה החיפוש הרביעי, הצגת הודעה
+                     if (newSearchCount >= 4) {
+                         console.log('⚠️ זה היה החיפוש האחרון עם פרטי התחברות שמורים');
+                         console.log('בפעם הבאה תצטרך להזין פרטי התחברות מחדש');
+                     }
+                     
+                     // עדכון מידע על מספר החיפושים
+                     updateSearchCountInfo();
+                 } else if (result.status === 'failed') {
                     showStatus('failed', result.error || 'החילוץ נכשל');
+                    hideProgressLoader();
                 } else if (result.status === 'running') {
+                    // עדכון התקדמות עם הודעה ברורה
+                    updateProgress();
+                    showStatus('running', 'החיפוש עדיין מתבצע... אנא המתן, זה יכול לקחת כמה דקות');
                     setTimeout(checkStatus, 10000); // בדיקה כל 10 שניות
                 }
             } catch (error) {
                 showStatus('failed', 'שגיאה בבדיקת סטטוס');
+                hideProgressLoader();
             }
         }
         
-        function showStatus(type, message) {
-            const status = document.getElementById('status');
-            const statusMessage = document.getElementById('statusMessage');
-            
-            status.className = `status ${type}`;
-            status.style.display = 'block';
-            statusMessage.textContent = message;
-        }
+                 function showStatus(type, message) {
+             const status = document.getElementById('status');
+             const statusMessage = document.getElementById('statusMessage');
+             const statusNewSearchBtn = document.getElementById('statusNewSearchBtn');
+             
+             // בדיקה שהאלמנטים קיימים
+             if (!status || !statusMessage) {
+                 console.error('אלמנטי סטטוס לא נמצאו:', { status, statusMessage });
+                 return;
+             }
+             
+             status.className = `status ${type}`;
+             status.style.display = 'block';
+             statusMessage.textContent = message;
+             
+             // הצגת כפתור חיפוש חדש רק כשהושלם
+             if (statusNewSearchBtn) {
+                 if (type === 'completed') {
+                     statusNewSearchBtn.style.display = 'inline-block';
+                     
+                     // הוספת event listener לכפתור
+                     statusNewSearchBtn.onclick = () => {
+                         if (confirm('האם תרצה לבצע חיפוש חדש?')) {
+                             // איפוס הטופס והסתרת התוצאות
+                             resetForm();
+                             
+                             // הסתרת התוצאות והכפתורים
+                             const results = document.getElementById('results');
+                             const downloadBtn = document.getElementById('downloadBtn');
+                             const newSearchBtn = document.getElementById('newSearchBtn');
+                             
+                             if (results) results.style.display = 'none';
+                             if (downloadBtn) downloadBtn.style.display = 'none';
+                             if (newSearchBtn) newSearchBtn.style.display = 'none';
+                             
+                             // הסתרת הסטטוס
+                             status.style.display = 'none';
+                             
+                             // איפוס משתנים
+                             currentJobId = null;
+                             
+                             // הפעלת כפתור החיפוש
+                             const scrapeBtn = document.getElementById('scrapeBtn');
+                             if (scrapeBtn) {
+                                 scrapeBtn.disabled = false;
+                                 scrapeBtn.innerHTML = '🚀 התחל חילוץ';
+                             }
+                             
+                             // עדכון מידע על מספר החיפושים
+                             updateSearchCountInfo();
+                         }
+                     };
+                 } else {
+                     statusNewSearchBtn.style.display = 'none';
+                 }
+             }
+         }
         
         function displayResults(developers) {
             const results = document.getElementById('results');
             const developersList = document.getElementById('developersList');
+            
+            // בדיקה שהאלמנטים קיימים
+            if (!results || !developersList) {
+                console.error('אלמנטי תוצאות לא נמצאו:', { results, developersList });
+                return;
+            }
             
             developersList.innerHTML = '';
             
@@ -361,14 +841,177 @@
             results.style.display = 'block';
         }
         
-        function showDownloadButton() {
-            const downloadBtn = document.getElementById('downloadBtn');
-            downloadBtn.style.display = 'block';
-            
-            downloadBtn.onclick = () => {
-                window.open(`/api/download/${currentJobId}`, '_blank');
-            };
+                 function showDownloadButton() {
+             const downloadBtn = document.getElementById('downloadBtn');
+             const newSearchBtn = document.getElementById('newSearchBtn');
+             
+             // בדיקה שהאלמנטים קיימים
+             if (!downloadBtn || !newSearchBtn) {
+                 console.error('כפתורים לא נמצאו:', { downloadBtn, newSearchBtn });
+                 return;
+             }
+             
+             downloadBtn.style.display = 'block';
+             newSearchBtn.style.display = 'block';
+             
+             downloadBtn.onclick = () => {
+                 window.open(`/api/download/${currentJobId}`, '_blank');
+             };
+             
+             newSearchBtn.onclick = () => {
+                 if (confirm('האם תרצה לבצע חיפוש חדש?')) {
+                     // איפוס הטופס והסתרת התוצאות
+                     resetForm();
+                     
+                     // הסתרת התוצאות והכפתורים
+                     const results = document.getElementById('results');
+                     const status = document.getElementById('status');
+                     if (results) results.style.display = 'none';
+                     if (status) status.style.display = 'none';
+                     
+                     // איפוס משתנים
+                     currentJobId = null;
+                     
+                     // הסתרת כפתורים
+                     downloadBtn.style.display = 'none';
+                     newSearchBtn.style.display = 'none';
+                     
+                     // הפעלת כפתור החיפוש
+                     const scrapeBtn = document.getElementById('scrapeBtn');
+                     if (scrapeBtn) {
+                         scrapeBtn.disabled = false;
+                         scrapeBtn.innerHTML = '🚀 התחל חילוץ';
+                     }
+                     
+                     // עדכון מידע על מספר החיפושים
+                     updateSearchCountInfo();
+                 }
+             };
+         }
+        
+        // Progress Loader Functions
+        function showProgressLoader() {
+            const progressLoader = document.getElementById('progressLoader');
+            if (progressLoader) {
+                progressLoader.style.display = 'block';
+                resetProgress();
+            }
         }
+        
+        function hideProgressLoader() {
+            const progressLoader = document.getElementById('progressLoader');
+            if (progressLoader) {
+                progressLoader.style.display = 'none';
+            }
+        }
+        
+        function resetProgress() {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const steps = document.querySelectorAll('.step');
+            
+            if (progressFill) progressFill.style.width = '0%';
+            if (progressText) progressText.textContent = '0%';
+            
+            steps.forEach((step, index) => {
+                step.className = 'step';
+                if (index === 0) step.classList.add('active');
+            });
+        }
+        
+        function updateProgress() {
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            const steps = document.querySelectorAll('.step');
+            
+            if (!progressFill || !progressText) return;
+            
+            // חישוב התקדמות בסיסי
+            const currentTime = Date.now();
+            const startTime = sessionStorage.getItem('scrapeStartTime') || currentTime;
+            const elapsed = currentTime - startTime;
+            const estimatedTotal = 3 * 60 * 1000; // 3 דקות
+            const progress = Math.min((elapsed / estimatedTotal) * 100, 95);
+            
+            progressFill.style.width = progress + '%';
+            progressText.textContent = Math.round(progress) + '%';
+            
+            // עדכון שלבים
+            updateSteps(progress);
+        }
+        
+        function updateSteps(progress) {
+            const steps = document.querySelectorAll('.step');
+            
+            if (progress < 25) {
+                steps[0].className = 'step active';
+                steps[1].className = 'step';
+                steps[2].className = 'step';
+                steps[3].className = 'step';
+            } else if (progress < 50) {
+                steps[0].className = 'step completed';
+                steps[1].className = 'step active';
+                steps[2].className = 'step';
+                steps[3].className = 'step';
+            } else if (progress < 75) {
+                steps[0].className = 'step completed';
+                steps[1].className = 'step completed';
+                steps[2].className = 'step active';
+                steps[3].className = 'step';
+            } else {
+                steps[0].className = 'step completed';
+                steps[1].className = 'step completed';
+                steps[2].className = 'step completed';
+                steps[3].className = 'step active';
+            }
+        }
+        
+                 // שמירת זמן התחלה בעת התחלת חיפוש
+         function startScrapeTimer() {
+             sessionStorage.setItem('scrapeStartTime', Date.now().toString());
+         }
+         
+         // פונקציה לאיפוס הטופס
+         function resetForm() {
+             const form = document.getElementById('scrapeForm');
+             if (form) {
+                 form.reset();
+                 // שמירת ערך החיפוש האחרון
+                 const searchQueryInput = document.getElementById('searchQuery');
+                 const savedQuery = sessionStorage.getItem('lastSearchQuery');
+                 if (savedQuery && searchQueryInput) {
+                     searchQueryInput.value = savedQuery;
+                 }
+             }
+             
+             // החזרת כל האלמנטים למצב התחלתי
+             const scrapeBtn = document.getElementById('scrapeBtn');
+             const loading = document.getElementById('loading');
+             const status = document.getElementById('status');
+             const results = document.getElementById('results');
+             const downloadBtn = document.getElementById('downloadBtn');
+             const newSearchBtn = document.getElementById('newSearchBtn');
+             const progressLoader = document.getElementById('progressLoader');
+             
+             // הפעלת כפתור החיפוש
+             if (scrapeBtn) {
+                 scrapeBtn.disabled = false;
+                 scrapeBtn.innerHTML = '🚀 התחל חילוץ';
+             }
+             
+             // הסתרת אלמנטי טעינה
+             if (loading) loading.style.display = 'none';
+             if (progressLoader) progressLoader.style.display = 'none';
+             
+             // הסתרת תוצאות וסטטוס
+             if (status) status.style.display = 'none';
+             if (results) results.style.display = 'none';
+             if (downloadBtn) downloadBtn.style.display = 'none';
+             if (newSearchBtn) newSearchBtn.style.display = 'none';
+             
+             // איפוס משתנים
+             currentJobId = null;
+         }
     </script>
 </body>
 </html>

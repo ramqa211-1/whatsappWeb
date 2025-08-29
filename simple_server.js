@@ -22,7 +22,7 @@ app.use(express.static('public'));
 let scrapingResults = new Map();
 
 // LinkedIn scraper function - REAL SCRAPING!
-async function scrapeLinkedInReal(email, password, searchQuery = 'Python Developer', maxResults = 20) {
+async function scrapeLinkedInReal(email, password, searchQuery = 'Python Developer', maxResults = 20, retryCount = 0) {
     if (!chromium) {
         throw new Error('Playwright is not available. Cannot perform scraping.');
     }
@@ -45,24 +45,62 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
     });
 
     try {
+        console.log(`🔐 ניסיון ${retryCount + 1}: מתחבר ל-LinkedIn...`);
+        
+        // הגדלת timeout ל-60 שניות
+        page.setDefaultTimeout(60000);
+        page.setDefaultNavigationTimeout(60000);
+        
         // התחברות ל-LinkedIn
-        await page.goto('https://www.linkedin.com/login', { waitUntil: 'networkidle' });
+        console.log('📝 ממלא פרטי התחברות...');
+        await page.goto('https://www.linkedin.com/login', { 
+            waitUntil: 'domcontentloaded', // רק DOM, לא כל הדף
+            timeout: 60000 
+        });
+        
         await page.fill('#username', email);
         await page.fill('#password', password);
         await page.click('button[type="submit"]');
         
-        // המתנה לטעינה
+        // המתנה פשוטה - 10 שניות אחרי לוגין
+        console.log('⏳ ממתין 10 שניות אחרי לוגין...');
         await page.waitForTimeout(10000);
+        console.log('✅ המתנה הושלמה, ממשיכים...');
         
-        // חיפוש
+        // חיפוש - עכשיו מחפש כל מילה שאתה מזין
+        console.log(`🔍 מחפש: "${searchQuery}"...`);
         const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(searchQuery)}`;
-        await page.goto(searchUrl, { waitUntil: 'networkidle' });
-        await page.waitForTimeout(15000);
+        
+        console.log(`🌐 נווט ל: ${searchUrl}`);
+        await page.goto(searchUrl, { 
+            waitUntil: 'domcontentloaded', // רק DOM, לא כל הדף
+            timeout: 60000 
+        });
+        
+        console.log('⏳ ממתין 10 שניות לטעינת תוצאות החיפוש...');
+        await page.waitForTimeout(10000);
+        console.log('✅ המתנה הושלמה, מחלץ נתונים...');
 
-        // חילוץ נתונים אמיתיים
+        // חילוץ נתונים אמיתיים - עכשיו לוקח את כל התוצאות
+        console.log('📊 מחלץ נתונים מהדף...');
         const developers = await page.evaluate(() => {
             const results = [];
             const cards = document.querySelectorAll('[data-view-name="search-entity-result-universal-template"]');
+            
+            console.log(`🔍 נמצאו ${cards.length} כרטיסי תוצאות`);
+            
+            // לוג נוסף לדיבוג
+            if (cards.length === 0) {
+                console.log('⚠️ לא נמצאו כרטיסי תוצאות!');
+                console.log('🔍 מחפש אלמנטים אחרים...');
+                
+                // נסיון למצוא אלמנטים אחרים
+                const alternativeCards = document.querySelectorAll('.search-result__info');
+                console.log(`🔍 אלמנטים חלופיים: ${alternativeCards.length}`);
+                
+                const allDivs = document.querySelectorAll('div');
+                console.log(`🔍 סה"כ divs בדף: ${allDivs.length}`);
+            }
             
             cards.forEach((card, index) => {
                 try {
@@ -71,22 +109,22 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
                     
                     if (lines.length >= 2) {
                         const name = lines[0].trim();
+                        // עכשיו לוקח את כל התפקידים, לא רק תפקידים ספציפיים
                         const title = lines.find(line => 
-                            line.toLowerCase().includes('developer') || 
-                            line.toLowerCase().includes('engineer') ||
-                            line.toLowerCase().includes('qa') ||
-                            line.toLowerCase().includes('devops') ||
-                            line.toLowerCase().includes('react') ||
-                            line.toLowerCase().includes('backend') ||
-                            line.toLowerCase().includes('js') ||
-                            line.toLowerCase().includes('python')
+                            line.length > 3 && 
+                            !line.includes('Connect') && 
+                            !line.includes('View') &&
+                            !line.includes('Message') &&
+                            !line.includes('Follow')
                         ) || lines[1];
                         
                         const location = lines.find(line => 
                             line.includes(',') || 
                             line.toLowerCase().includes('israel') ||
                             line.toLowerCase().includes('tel aviv') ||
-                            line.toLowerCase().includes('jerusalem')
+                            line.toLowerCase().includes('jerusalem') ||
+                            line.toLowerCase().includes('united states') ||
+                            line.toLowerCase().includes('usa')
                         ) || 'N/A';
 
                         if (name && name.length > 2 && !name.includes('Connect') && !name.includes('View')) {
@@ -100,24 +138,36 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
                         }
                     }
                 } catch (e) {
-                    // שגיאה בפרופיל בודד
+                    console.log(`⚠️ שגיאה בפרופיל ${index + 1}:`, e.message);
                 }
             });
             
             return results;
         });
 
+        console.log(`✅ חילוץ הושלם! נמצאו ${developers.length} תוצאות`);
         await browser.close();
+        
         return {
             success: true,
             totalResults: developers.length,
             developers: developers.slice(0, maxResults),
-            scrapedAt: new Date().toISOString()
+            scrapedAt: new Date().toISOString(),
+            retryCount: retryCount
         };
 
     } catch (error) {
+        console.error(`❌ שגיאה בניסיון ${retryCount + 1}:`, error.message);
         await browser.close();
-        throw error;
+        
+        // אם זה לא הניסיון האחרון, ננסה שוב
+        if (retryCount < 2) {
+            console.log(`🔄 מנסה שוב... (ניסיון ${retryCount + 2}/3)`);
+            await new Promise(resolve => setTimeout(resolve, 5000)); // המתנה 5 שניות
+            return await scrapeLinkedInReal(email, password, searchQuery, maxResults, retryCount + 1);
+        }
+        
+        throw new Error(`החיפוש נכשל אחרי 3 ניסיונות. השגיאה האחרונה: ${error.message}`);
     }
 }
 
@@ -232,7 +282,7 @@ app.get('/api/download/:jobId', (req, res) => {
     });
     
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="python_developers_${jobId}.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="linkedin_results_${jobId}.csv"`);
     res.send(csvContent);
 });
 
