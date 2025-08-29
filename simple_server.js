@@ -95,13 +95,46 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         await page.fill('#password', password);
         console.log('✅ סיסמה הוזנה');
         
-        console.log('🚀 לוחץ על כפתור התחברות...');
-        await page.click('button[type="submit"]');
-        console.log('✅ כפתור התחברות נלחץ');
-        
-        // הגישה החדשה - מחכים שהדף יטען בעצמו
-        console.log('⏳ מחכה שהדף יטען אחרי לוגין...');
-        console.log('🔄 LinkedIn יטען את הדף הראשי בעצמו...');
+                 console.log('🚀 לוחץ על כפתור התחברות...');
+         await page.click('button[type="submit"]');
+         console.log('✅ כפתור התחברות נלחץ');
+         
+         // המתנה קצרה לטעינת הדף אחרי לוגין
+         console.log('⏳ ממתין 5 שניות לטעינת הדף אחרי לוגין...');
+         await page.waitForTimeout(5000);
+         
+         // בדיקה מוקדמת אם LinkedIn דורש אימות אבטחה
+         console.log('🔒 בודק אם LinkedIn דורש אימות אבטחה...');
+         try {
+             const earlyUrl = page.url();
+             const earlyTitle = await page.title();
+             
+             if (earlyUrl.includes('/checkpoint/') || 
+                 earlyTitle.toLowerCase().includes('security verification') ||
+                 earlyTitle.toLowerCase().includes('verification') ||
+                 earlyTitle.toLowerCase().includes('checkpoint')) {
+                 
+                 console.log('🚨 LinkedIn דורש אימות אבטחה מוקדם!');
+                 console.log(`📍 דף אבטחה: ${earlyTitle}`);
+                 console.log(`🔗 URL אבטחה: ${earlyUrl}`);
+                 
+                 // צילום מסך של דף האבטחה
+                 try {
+                     await page.screenshot({ path: 'linkedin_security_checkpoint_early.png', fullPage: true });
+                     console.log('📸 צילום מסך של דף האבטחה נשמר: linkedin_security_checkpoint_early.png');
+                 } catch (screenshotError) {
+                     console.log('⚠️ לא הצלחתי לצלם מסך:', screenshotError.message);
+                 }
+                 
+                 throw new Error('LinkedIn דורש אימות אבטחה - לא ניתן להמשיך אוטומטית');
+             }
+         } catch (earlyCheckError) {
+             console.log('⚠️ שגיאה בבדיקה מוקדמת:', earlyCheckError.message);
+         }
+         
+         // הגישה החדשה - מחכים שהדף יטען בעצמו
+         console.log('⏳ מחכה שהדף יטען אחרי לוגין...');
+         console.log('🔄 LinkedIn יטען את הדף הראשי בעצמו...');
         
         // המתנה עד שהדף יטען נכון
         let attempts = 0;
@@ -118,25 +151,46 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
                 console.log(`📍 URL נוכחי: ${currentUrl}`);
                 console.log(`📄 כותרת נוכחית: ${currentTitle}`);
                 
-                // בדיקה אם הדף נטען נכון
-                if (currentUrl.includes('linkedin.com') && 
-                    !currentUrl.includes('chrome-error://') && 
-                    !currentUrl.includes('data:') && 
-                    currentUrl !== 'about:blank' &&
-                    currentTitle.length > 0) {
-                    
-                    console.log('✅ הדף נטען נכון!');
-                    
-                    // בדיקה אם אנחנו בדף הראשי
-                    if (currentUrl.includes('/feed/') || currentUrl.includes('/in/') || currentUrl === 'https://www.linkedin.com/') {
-                        console.log('🎉 הגעתי לדף הראשי של LinkedIn!');
-                        break;
-                    } else {
-                        console.log('⚠️ הדף נטען אבל לא הגעתי לדף הראשי - ממשיך לחכות...');
-                    }
-                } else {
-                    console.log('⏳ הדף עדיין לא נטען נכון - מחכה...');
-                }
+                                 // בדיקה אם הדף נטען נכון
+                 if (currentUrl.includes('linkedin.com') && 
+                     !currentUrl.includes('chrome-error://') && 
+                     !currentUrl.includes('data:') && 
+                     currentUrl !== 'about:blank' &&
+                     currentTitle.length > 0) {
+                     
+                     console.log('✅ הדף נטען נכון!');
+                     
+                     // בדיקה אם LinkedIn דורש אימות אבטחה
+                     if (currentUrl.includes('/checkpoint/') || 
+                         currentTitle.toLowerCase().includes('security verification') ||
+                         currentTitle.toLowerCase().includes('verification') ||
+                         currentTitle.toLowerCase().includes('checkpoint')) {
+                         
+                         console.log('🚨 LinkedIn דורש אימות אבטחה!');
+                         console.log(`📍 דף אבטחה: ${currentTitle}`);
+                         console.log(`🔗 URL אבטחה: ${currentUrl}`);
+                         
+                         // צילום מסך של דף האבטחה
+                         try {
+                             await page.screenshot({ path: 'linkedin_security_checkpoint.png', fullPage: true });
+                             console.log('📸 צילום מסך של דף האבטחה נשמר: linkedin_security_checkpoint.png');
+                         } catch (screenshotError) {
+                             console.log('⚠️ לא הצלחתי לצלם מסך:', screenshotError.message);
+                         }
+                         
+                         throw new Error('LinkedIn דורש אימות אבטחה - לא ניתן להמשיך אוטומטית');
+                     }
+                     
+                     // בדיקה אם אנחנו בדף הראשי
+                     if (currentUrl.includes('/feed/') || currentUrl.includes('/in/') || currentUrl === 'https://www.linkedin.com/') {
+                         console.log('🎉 הגעתי לדף הראשי של LinkedIn!');
+                         break;
+                     } else {
+                         console.log('⚠️ הדף נטען אבל לא הגעתי לדף הראשי - ממשיך לחכות...');
+                     }
+                 } else {
+                     console.log('⏳ הדף עדיין לא נטען נכון - מחכה...');
+                 }
                 
                 // המתנה 2 שניות בין בדיקות
                 await page.waitForTimeout(2000);
