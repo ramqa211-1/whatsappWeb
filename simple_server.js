@@ -21,227 +21,14 @@ app.use(express.static('public'));
 // Store for scraping results
 let scrapingResults = new Map();
 
-// פונקציה לביצוע פעולות רנדומליות כמו משתמש אמיתי
-async function performRandomUserAction(page) {
-    console.log('🎲 מתחיל בחירת פעולה רנדומלית...');
-    
-    // בדיקת מצב הדף לפני הפעולה
-    try {
-        const currentUrl = page.url();
-        const currentTitle = await page.title();
-        console.log(`📍 URL נוכחי לפני פעולה רנדומלית: ${currentUrl}`);
-        console.log(`📄 כותרת נוכחית לפני פעולה רנדומלית: ${currentTitle}`);
-    } catch (error) {
-        console.log('⚠️ לא הצלחתי לבדוק מצב הדף:', error.message);
-    }
-    
-    const actions = [
-        {
-            name: 'לחיצה על פרופיל שלי',
-            selector: 'a[href*="/in/"], .global-nav__me-photo, .nav-item__profile-member-photo',
-            probability: 0.3,
-            action: async (selector) => {
-                console.log('🔍 מחפש קישור לפרופיל שלי...');
-                const profileLink = await page.$(selector);
-                if (profileLink) {
-                    console.log('✅ נמצא קישור לפרופיל שלי');
-                    console.log('👤 לוחץ על פרופיל שלי...');
-                    
-                    try {
-                        await profileLink.click();
-                        console.log('✅ לחיצה על פרופיל בוצעה');
-                        
-                        const waitTime = 3000 + Math.random() * 5000; // 3-8 שניות
-                        console.log(`⏳ ממתין ${Math.round(waitTime/1000)} שניות אחרי לחיצה על פרופיל...`);
-                        await page.waitForTimeout(waitTime);
-                        
-                        // בדיקת מצב הדף אחרי הפעולה
-                        const newUrl = page.url();
-                        const newTitle = await page.title();
-                        console.log(`📍 URL חדש אחרי לחיצה על פרופיל: ${newUrl}`);
-                        console.log(`📄 כותרת חדשה אחרי לחיצה על פרופיל: ${newTitle}`);
-                        
-                        if (newUrl.includes('/in/')) {
-                            console.log('✅ הגעתי לפרופיל שלי בהצלחה');
-                        } else {
-                            console.log('⚠️ לא הגעתי לפרופיל שלי - URL לא השתנה');
-                        }
-                        
-                        return true;
-                    } catch (error) {
-                        console.log('❌ שגיאה בלחיצה על פרופיל:', error.message);
-                        return false;
-                    }
-                } else {
-                    console.log('⚠️ לא נמצא קישור לפרופיל שלי');
-                    return false;
-                }
-            }
-        },
-        {
-            name: 'לחיצה על פוסט ראשון/שני בפיד',
-            selector: '.feed-shared-update-v2, .feed-shared-text, .feed-shared-update-v2__description',
-            probability: 0.4,
-            action: async (selector) => {
-                console.log('🔍 מחפש פוסטים בפיד...');
-                const posts = await page.$$(selector);
-                console.log(`📊 נמצאו ${posts.length} פוסטים בפיד`);
-                
-                if (posts.length > 0) {
-                    const postIndex = Math.floor(Math.random() * Math.min(2, posts.length));
-                    console.log(`📝 בוחר פוסט מספר ${postIndex + 1} מתוך ${posts.length}`);
-                    
-                    try {
-                        // בדיקת תוכן הפוסט לפני לחיצה
-                        const postText = await posts[postIndex].textContent();
-                        const shortText = postText ? postText.substring(0, 100) + '...' : 'לא ניתן לקרוא';
-                        console.log(`📝 תוכן הפוסט שנבחר: ${shortText}`);
-                        
-                        console.log('📝 לוחץ על פוסט בפיד...');
-                        await posts[postIndex].click();
-                        console.log('✅ לחיצה על פוסט בוצעה');
-                        
-                        const waitTime = 2000 + Math.random() * 3000; // 2-5 שניות
-                        console.log(`⏳ ממתין ${Math.round(waitTime/1000)} שניות אחרי לחיצה על פוסט...`);
-                        await page.waitForTimeout(waitTime);
-                        
-                        // בדיקת מצב הדף אחרי הפעולה
-                        const newUrl = page.url();
-                        const newTitle = await page.title();
-                        console.log(`📍 URL חדש אחרי לחיצה על פוסט: ${newUrl}`);
-                        console.log(`📄 כותרת חדשה אחרי לחיצה על פוסט: ${newTitle}`);
-                        
-                        if (newUrl !== page.url()) {
-                            console.log('✅ ניווט לפוסט בוצע בהצלחה');
-                        } else {
-                            console.log('⚠️ לא היה ניווט לפוסט - ייתכן שהפוסט נפתח באותו דף');
-                        }
-                        
-                        return true;
-                    } catch (error) {
-                        console.log('❌ שגיאה בלחיצה על פוסט:', error.message);
-                        return false;
-                    }
-                } else {
-                    console.log('⚠️ לא נמצאו פוסטים בפיד');
-                    return false;
-                }
-            }
-        },
-        {
-            name: 'לחיצה על תפריט הודעות',
-            selector: 'a[href*="/messaging"], .nav-item__messaging, .global-nav__messaging',
-            probability: 0.2,
-            action: async (selector) => {
-                const messagingLink = await page.$(selector);
-                if (messagingLink) {
-                    console.log('💬 לוחץ על תפריט הודעות...');
-                    await messagingLink.click();
-                    await page.waitForTimeout(2000 + Math.random() * 3000); // 2-5 שניות
-                    console.log('✅ הגעתי לתפריט הודעות');
-                    return true;
-                }
-                return false;
-            }
-        },
-        {
-            name: 'לחיצה על תפריט רשת',
-            selector: 'a[href*="/mynetwork"], .nav-item__mynetwork, .global-nav__mynetwork',
-            probability: 0.1,
-            action: async (selector) => {
-                const networkLink = await page.$(selector);
-                if (networkLink) {
-                    console.log('🌐 לוחץ על תפריט רשת...');
-                    await networkLink.click();
-                    await page.waitForTimeout(2000 + Math.random() * 3000); // 2-5 שניות
-                    console.log('✅ הגעתי לתפריט רשת');
-                    return true;
-                }
-                return false;
-            }
-        }
-    ];
-    
-    // בחירת פעולה לפי הסתברות
-    const random = Math.random();
-    let cumulativeProbability = 0;
-    
-    for (const action of actions) {
-        cumulativeProbability += action.probability;
-        if (random <= cumulativeProbability) {
-            console.log(`🎲 נבחרה פעולה: ${action.name}`);
-            
-            try {
-                const success = await action.action(action.selector);
-                                    if (success) {
-                        // המתנה רנדומלית אחרי הפעולה
-                        const waitTime = 5000 + Math.random() * 10000; // 5-15 שניות
-                        console.log(`⏳ ממתין ${Math.round(waitTime/1000)} שניות אחרי הפעולה...`);
-                        await page.waitForTimeout(waitTime);
-                        console.log('✅ המתנה אחרי הפעולה הושלמה');
-                        
-                        // חזרה לדף הראשי (לא תמיד)
-                        if (Math.random() < 0.7) { // 70% מהמקרים
-                            console.log('🏠 חוזר לדף הראשי...');
-                            try {
-                                console.log('🌐 נווט לדף הראשי: https://www.linkedin.com/feed/');
-                                await page.goto('https://www.linkedin.com/feed/', { 
-                                    waitUntil: 'domcontentloaded',
-                                    timeout: 30000 
-                                });
-                                console.log('✅ ניווט לדף הראשי הושלם');
-                                
-                                const waitTime = 2000 + Math.random() * 3000; // 2-5 שניות
-                                console.log(`⏳ ממתין ${Math.round(waitTime/1000)} שניות אחרי חזרה לדף הראשי...`);
-                                await page.waitForTimeout(waitTime);
-                                
-                                // בדיקת מצב הדף אחרי חזרה
-                                const finalUrl = page.url();
-                                const finalTitle = await page.title();
-                                console.log(`📍 URL סופי אחרי חזרה לדף הראשי: ${finalUrl}`);
-                                console.log(`📄 כותרת סופית אחרי חזרה לדף הראשי: ${finalTitle}`);
-                                
-                                if (finalUrl.includes('/feed/')) {
-                                    console.log('✅ חזרתי לדף הראשי בהצלחה');
-                                } else {
-                                    console.log('⚠️ לא חזרתי לדף הראשי - URL לא נכון');
-                                }
-                            } catch (error) {
-                                console.log('❌ שגיאה בחזרה לדף הראשי:', error.message);
-                                console.log('🔍 מנסה לבדוק איפה אני עכשיו...');
-                                try {
-                                    const currentUrl = page.url();
-                                    const currentTitle = await page.title();
-                                    console.log(`📍 URL נוכחי אחרי שגיאה: ${currentUrl}`);
-                                    console.log(`📄 כותרת נוכחית אחרי שגיאה: ${currentTitle}`);
-                                } catch (urlError) {
-                                    console.log('⚠️ לא הצלחתי לבדוק URL נוכחי:', urlError.message);
-                                }
-                            }
-                        } else {
-                            console.log('🎲 לא חוזר לדף הראשי (30% מהמקרים)');
-                        }
-                        return;
-                    }
-            } catch (error) {
-                console.log(`⚠️ הפעולה "${action.name}" נכשלה:`, error.message);
-            }
-        }
-    }
-    
-    // אם אף פעולה לא עבדה, נחכה קצת
-    console.log('⚠️ לא הצלחתי לבצע פעולה רנדומלית, מחכה קצת...');
-    await page.waitForTimeout(3000 + Math.random() * 5000); // 3-8 שניות
-}
-
-// LinkedIn scraper function - REAL SCRAPING!
+// LinkedIn scraper function - NEW APPROACH!
 async function scrapeLinkedInReal(email, password, searchQuery = 'Python Developer', maxResults = 20, retryCount = 0) {
     if (!chromium) {
         throw new Error('Playwright is not available. Cannot perform scraping.');
     }
 
     const browser = await chromium.launch({
-        headless: true,
+        headless: false, // שינוי ל-false כדי לראות מה קורה
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -251,7 +38,8 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
             '--no-zygote',
             '--disable-gpu',
             '--disable-web-security',
-            '--disable-features=VizDisplayCompositor'
+            '--disable-features=VizDisplayCompositor',
+            '--disable-blink-features=AutomationControlled'
         ]
     });
 
@@ -262,15 +50,11 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
     // הגדרת viewport אמיתי
     await page.setViewportSize({ width: 1920, height: 1080 });
     
-    // הגדרת cookies ו-localStorage כדי להיראות כמו משתמש אמיתי
+    // הסתרת Playwright
     await page.addInitScript(() => {
-        // הגדרת localStorage
-        localStorage.setItem('li_at', 'dummy_token');
-        localStorage.setItem('JSESSIONID', 'dummy_session');
-        
-        // הגדרת cookies
-        document.cookie = 'li_at=dummy_token; domain=.linkedin.com; path=/';
-        document.cookie = 'JSESSIONID=dummy_session; domain=.linkedin.com; path=/';
+        Object.defineProperty(navigator, 'webdriver', {
+            get: () => undefined,
+        });
     });
 
     try {
@@ -278,10 +62,10 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         console.log(`📧 אימייל: ${email}`);
         console.log(`🔑 סיסמה: ${password ? '***' + password.slice(-3) : 'לא הוזנה'}`);
         
-        // הגדלת timeout ל-60 שניות
-        page.setDefaultTimeout(60000);
-        page.setDefaultNavigationTimeout(60000);
-        console.log('⏱️ Timeout הוגדר ל-60 שניות');
+        // הגדרת timeout
+        page.setDefaultTimeout(120000); // 2 דקות
+        page.setDefaultNavigationTimeout(120000);
+        console.log('⏱️ Timeout הוגדר ל-2 דקות');
         
         // התחברות ל-LinkedIn
         console.log('🌐 מגיע לעמוד לוגין של LinkedIn...');
@@ -290,6 +74,9 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
             timeout: 60000 
         });
         console.log('✅ הגעתי לעמוד לוגין של LinkedIn');
+        
+        // המתנה קצרה לטעינת הדף
+        await page.waitForTimeout(3000);
         
         console.log('📝 ממלא פרטי התחברות...');
         await page.fill('#username', email);
@@ -301,204 +88,67 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         await page.click('button[type="submit"]');
         console.log('✅ כפתור התחברות נלחץ');
         
-        // המתנה מורחבת - 20 שניות אחרי לוגין (לפרוד)
-        console.log('⏳ ממתין 20 שניות לטעינת הדף אחרי לוגין...');
-        console.log('🔄 זה יכול לקחת זמן בפרוד...');
-        await page.waitForTimeout(20000);
-        console.log('✅ המתנה אחרי לוגין הושלמה');
+        // הגישה החדשה - מחכים שהדף יטען בעצמו
+        console.log('⏳ מחכה שהדף יטען אחרי לוגין...');
+        console.log('🔄 LinkedIn יטען את הדף הראשי בעצמו...');
         
-        // המתנה נוספת לטעינת הדף הראשי
-        console.log('⏳ ממתין 5 שניות נוספות לטעינת הדף הראשי...');
-        await page.waitForTimeout(5000);
-        console.log('✅ המתנה לטעינת הדף הראשי הושלמה');
+        // המתנה עד שהדף יטען נכון
+        let attempts = 0;
+        const maxAttempts = 30; // 30 ניסיונות של 2 שניות = דקה
         
-        // בדיקה שהדף נטען נכון אחרי לוגין
-        console.log('🔍 בודק מצב הדף אחרי לוגין...');
-        const currentUrl = page.url();
-        const currentTitle = await page.title();
-        console.log(`📍 URL נוכחי: ${currentUrl}`);
-        console.log(`📄 כותרת נוכחית: ${currentTitle}`);
-        
-        // בדיקה אם LinkedIn דורש אימות נוסף
-        const bodyText = await page.textContent('body');
-        if (bodyText.includes('captcha') || bodyText.includes('verify') || bodyText.includes('checkpoint')) {
-            console.log('🚨 LinkedIn דורש אימות נוסף!');
-            await page.screenshot({ path: 'linkedin_verification.png', fullPage: true });
-            console.log('📸 צילום מסך של דף האימות נשמר');
-            throw new Error('LinkedIn דורש אימות נוסף - לא ניתן להמשיך');
-        }
-        
-        // בדיקה אם אנחנו בדף הראשי או בדף אחר
-        if (currentUrl.includes('chrome-error://') || currentUrl.includes('data:') || currentUrl === 'about:blank') {
-            console.log('⚠️ הדף לא נטען נכון - מנסה לנווט לדף הראשי...');
+        while (attempts < maxAttempts) {
+            attempts++;
+            console.log(`🔍 ניסיון ${attempts}/${maxAttempts}: בודק מצב הדף...`);
+            
             try {
-                await page.goto('https://www.linkedin.com/feed/', { 
-                    waitUntil: 'domcontentloaded',
-                    timeout: 30000 
-                });
-                console.log('✅ ניווט לדף הראשי הושלם');
-                await page.waitForTimeout(5000);
-            } catch (navError) {
-                console.log('❌ שגיאה בניווט לדף הראשי:', navError.message);
-                throw new Error('לא ניתן לנווט לדף הראשי אחרי לוגין');
-            }
-        }
-        
-        // פעולות רנדומליות כדי להיראות כמו משתמש אמיתי
-        console.log('🎲 מבצע פעולה רנדומלית כדי להיראות כמו משתמש אמיתי...');
-        await performRandomUserAction(page);
-        
-        // חיפוש - עכשיו מחפש כל מילה שאתה מזין
-        console.log(`🔍 מתחיל חיפוש עבור: "${searchQuery}"...`);
-        
-        // נסיון ראשון - חיפוש דרך הדף הראשי
-        try {
-            console.log('🔍 נסיון ראשון: מחפש דרך הדף הראשי...');
-            
-            // בדיקת מצב הדף לפני חיפוש
-            const beforeSearchUrl = page.url();
-            const beforeSearchTitle = await page.title();
-            console.log(`📍 URL לפני חיפוש: ${beforeSearchUrl}`);
-            console.log(`📄 כותרת לפני חיפוש: ${beforeSearchTitle}`);
-            
-            // לחץ על כפתור החיפוש אם קיים
-            console.log('🔍 מחפש שדה חיפוש בדף הראשי...');
-            const searchButton = await page.$('input[placeholder*="Search"], input[aria-label*="Search"], .search-global-typeahead__input');
-            
-            if (searchButton) {
-                console.log('✅ נמצא שדה חיפוש בדף הראשי');
+                const currentUrl = page.url();
+                const currentTitle = await page.title();
                 
-                try {
-                    console.log('🔍 לוחץ על שדה החיפוש...');
-                    await searchButton.click();
-                    console.log('✅ לחיצה על שדה החיפוש בוצעה');
-                    
-                    console.log('⏳ ממתין 2 שניות אחרי לחיצה...');
-                    await page.waitForTimeout(2000);
-                    
-                    console.log(`🔍 ממלא טקסט חיפוש: "${searchQuery}"...`);
-                    await searchButton.fill(searchQuery);
-                    console.log('✅ טקסט חיפוש הוזן');
-                    
-                    console.log('⏳ ממתין 2 שניות אחרי הזנת טקסט...');
-                    await page.waitForTimeout(2000);
-                    
-                    console.log('🔍 לוחץ Enter לביצוע החיפוש...');
-                    await page.keyboard.press('Enter');
-                    console.log('✅ Enter נלחץ - החיפוש מתבצע...');
-                    
-                    console.log('✅ חיפוש בוצע דרך הדף הראשי');
-                } catch (searchError) {
-                    console.log('❌ שגיאה בביצוע החיפוש דרך הדף הראשי:', searchError.message);
-                    throw searchError;
-                }
-            } else {
-                console.log('⚠️ לא נמצא שדה חיפוש בדף הראשי');
-                console.log('🔍 מנסה למצוא אלמנטים חלופיים...');
+                console.log(`📍 URL נוכחי: ${currentUrl}`);
+                console.log(`📄 כותרת נוכחית: ${currentTitle}`);
                 
-                // נסיון למצוא אלמנטים חלופיים
-                const alternativeSelectors = [
-                    'input[type="text"]',
-                    '.search-input',
-                    '[data-control-name="search_query"]'
-                ];
-                
-                for (const altSelector of alternativeSelectors) {
-                    const altElement = await page.$(altSelector);
-                    if (altElement) {
-                        console.log(`✅ נמצא אלמנט חלופי: ${altSelector}`);
+                // בדיקה אם הדף נטען נכון
+                if (currentUrl.includes('linkedin.com') && 
+                    !currentUrl.includes('chrome-error://') && 
+                    !currentUrl.includes('data:') && 
+                    currentUrl !== 'about:blank' &&
+                    currentTitle.length > 0) {
+                    
+                    console.log('✅ הדף נטען נכון!');
+                    
+                    // בדיקה אם אנחנו בדף הראשי
+                    if (currentUrl.includes('/feed/') || currentUrl.includes('/in/') || currentUrl === 'https://www.linkedin.com/') {
+                        console.log('🎉 הגעתי לדף הראשי של LinkedIn!');
                         break;
+                    } else {
+                        console.log('⚠️ הדף נטען אבל לא הגעתי לדף הראשי - ממשיך לחכות...');
                     }
+                } else {
+                    console.log('⏳ הדף עדיין לא נטען נכון - מחכה...');
                 }
                 
-                throw new Error('לא נמצא שדה חיפוש');
-            }
-        } catch (error) {
-            console.log('🔍 נסיון שני: נווט ישיר ל-URL חיפוש...');
-            console.log(`⚠️ הסיבה לכישלון נסיון ראשון: ${error.message}`);
-            
-            // בדיקה שהדף נטען נכון לפני ניסיון הניווט
-            const currentUrl = page.url();
-            if (currentUrl.includes('chrome-error://') || currentUrl.includes('data:') || currentUrl === 'about:blank') {
-                console.log('⚠️ הדף לא נטען נכון - מנסה לנווט לדף הראשי קודם...');
-                try {
-                    await page.goto('https://www.linkedin.com/feed/', { 
-                        waitUntil: 'domcontentloaded',
-                        timeout: 30000 
-                    });
-                    console.log('✅ ניווט לדף הראשי הושלם');
-                    await page.waitForTimeout(5000);
-                } catch (navError) {
-                    console.log('❌ שגיאה בניווט לדף הראשי:', navError.message);
-                    throw new Error('לא ניתן לנווט לדף הראשי');
-                }
-            }
-            
-            const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(searchQuery)}`;
-            console.log(`🌐 נווט ל-URL חיפוש: ${searchUrl}`);
-            
-            // נסיון עם waitUntil: 'domcontentloaded' בלבד
-            try {
-                console.log('🔍 נסיון עם domcontentloaded...');
-                await page.goto(searchUrl, { 
-                    waitUntil: 'domcontentloaded',
-                    timeout: 60000 
-                });
-                console.log('✅ הגעתי לעמוד תוצאות החיפוש עם domcontentloaded');
-            } catch (redirectError) {
-                console.log('❌ שגיאת redirects:', redirectError.message);
+                // המתנה 2 שניות בין בדיקות
+                await page.waitForTimeout(2000);
                 
-                // נסיון עם גישה הדרגתית
-                console.log('🔍 מנסה גישה הדרגתית...');
-                try {
-                    // קודם לדף הראשי
-                    await page.goto('https://www.linkedin.com/', { 
-                        waitUntil: 'domcontentloaded',
-                        timeout: 30000 
-                    });
-                    console.log('✅ הגעתי לדף הראשי');
-                    await page.waitForTimeout(3000);
-                    
-                    // עכשיו לחיפוש
-                    await page.goto(searchUrl, { 
-                        waitUntil: 'domcontentloaded',
-                        timeout: 30000 
-                    });
-                    console.log('✅ הגעתי לעמוד החיפוש אחרי גישה הדרגתית');
-                } catch (gradientError) {
-                    console.log('❌ גם הגישה ההדרגתית נכשלה:', gradientError.message);
-                    throw gradientError;
-                }
+            } catch (error) {
+                console.log(`⚠️ שגיאה בבדיקת הדף: ${error.message}`);
+                await page.waitForTimeout(2000);
             }
         }
         
-        console.log('⏳ ממתין 15 שניות לטעינת תוצאות החיפוש...');
-        console.log('🔄 זה יכול לקחת זמן בפרוד...');
-        await page.waitForTimeout(15000);
-        console.log('✅ המתנה לטעינת תוצאות החיפוש הושלמה');
+        if (attempts >= maxAttempts) {
+            throw new Error('הדף לא נטען נכון אחרי דקה של המתנה');
+        }
+        
+        // בדיקה סופית של הדף
+        const finalUrl = page.url();
+        const finalTitle = await page.title();
+        console.log(`📍 URL סופי: ${finalUrl}`);
+        console.log(`📄 כותרת סופית: ${finalTitle}`);
         
         // המתנה נוספת לטעינת התוכן
-        console.log('⏳ ממתין 5 שניות נוספות לטעינת התוכן...');
-        await page.waitForTimeout(5000);
-        console.log('✅ המתנה לטעינת התוכן הושלמה');
-
-        // בדיקה שהדף נטען נכון
-        console.log('🔍 בודק שהדף נטען נכון...');
-        const pageTitle = await page.title();
-        const pageUrl = page.url();
-        console.log(`📄 כותרת הדף: ${pageTitle}`);
-        console.log(`🔗 URL נוכחי: ${pageUrl}`);
-        
-        // בדיקה אם יש תוכן בדף
-        console.log('📊 בודק גודל תוכן הדף...');
-        const pageContent = await page.content();
-        console.log(`📊 גודל תוכן הדף: ${pageContent.length} תווים`);
-        
-        if (pageContent.length < 1000) {
-            console.log('⚠️ אזהרה: תוכן הדף קצר מדי - ייתכן שהדף לא נטען נכון');
-        } else {
-            console.log('✅ תוכן הדף נראה תקין');
-        }
+        console.log('⏳ ממתין 10 שניות לטעינת התוכן המלא...');
+        await page.waitForTimeout(10000);
         
         // בדיקה אם LinkedIn דורש אימות נוסף
         console.log('🔒 בודק אם LinkedIn דורש אימות נוסף...');
@@ -510,30 +160,78 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
             throw new Error('LinkedIn דורש אימות נוסף - לא ניתן להמשיך');
         }
         
-        // בדיקה אם אנחנו בדף הראשי
-        if (pageUrl.includes('linkedin.com/feed') || pageUrl.includes('linkedin.com/in/')) {
-            console.log('✅ הגעתי לדף הראשי של LinkedIn');
-        } else {
-            console.log('⚠️ לא הגעתי לדף הראשי - ייתכן שיש בעיה בהתחברות');
-            console.log(`📍 URL נוכחי: ${pageUrl}`);
+        // חיפוש דרך הממשק הרגיל
+        console.log(`🔍 מתחיל חיפוש עבור: "${searchQuery}"...`);
+        
+        try {
+            // נסיון למצוא שדה חיפוש
+            console.log('🔍 מחפש שדה חיפוש בדף...');
+            const searchSelectors = [
+                'input[placeholder*="Search"]',
+                'input[aria-label*="Search"]',
+                '.search-global-typeahead__input',
+                'input[type="text"]',
+                '[data-control-name="search_query"]'
+            ];
+            
+            let searchInput = null;
+            for (const selector of searchSelectors) {
+                searchInput = await page.$(selector);
+                if (searchInput) {
+                    console.log(`✅ נמצא שדה חיפוש: ${selector}`);
+                    break;
+                }
+            }
+            
+            if (searchInput) {
+                console.log('🔍 לוחץ על שדה החיפוש...');
+                await searchInput.click();
+                await page.waitForTimeout(2000);
+                
+                console.log(`🔍 ממלא טקסט חיפוש: "${searchQuery}"...`);
+                await searchInput.fill(searchQuery);
+                await page.waitForTimeout(2000);
+                
+                console.log('🔍 לוחץ Enter לביצוע החיפוש...');
+                await page.keyboard.press('Enter');
+                console.log('✅ Enter נלחץ - החיפוש מתבצע...');
+                
+                // המתנה לטעינת תוצאות
+                console.log('⏳ ממתין 15 שניות לטעינת תוצאות החיפוש...');
+                await page.waitForTimeout(15000);
+                
+            } else {
+                console.log('⚠️ לא נמצא שדה חיפוש - מנסה ניווט ישיר...');
+                
+                // ניווט ישיר לחיפוש
+                const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(searchQuery)}`;
+                console.log(`🌐 נווט ל-URL חיפוש: ${searchUrl}`);
+                
+                await page.goto(searchUrl, { 
+                    waitUntil: 'domcontentloaded',
+                    timeout: 60000 
+                });
+                console.log('✅ הגעתי לעמוד החיפוש');
+                
+                // המתנה לטעינת תוצאות
+                console.log('⏳ ממתין 15 שניות לטעינת תוצאות החיפוש...');
+                await page.waitForTimeout(15000);
+            }
+            
+        } catch (searchError) {
+            console.log('❌ שגיאה בביצוע החיפוש:', searchError.message);
+            throw searchError;
         }
-
-        // חילוץ נתונים אמיתיים - עכשיו לוקח את כל התוצאות
+        
+        // בדיקה שהדף נטען נכון
+        console.log('🔍 בודק שהדף נטען נכון...');
+        const pageTitle = await page.title();
+        const pageUrl = page.url();
+        console.log(`📄 כותרת הדף: ${pageTitle}`);
+        console.log(`🔗 URL נוכחי: ${pageUrl}`);
+        
+        // חילוץ נתונים
         console.log('📊 מתחיל חילוץ נתונים מהדף...');
-        
-        // בדיקה נוספת של הדף לפני חילוץ
-        const finalUrl = page.url();
-        const finalTitle = await page.title();
-        console.log(`📍 URL נוכחי לפני חילוץ: ${finalUrl}`);
-        console.log(`📄 כותרת נוכחית לפני חילוץ: ${finalTitle}`);
-        
-        // בדיקה אם אנחנו בדף תוצאות חיפוש
-        if (!finalUrl.includes('search/results') && !finalTitle.toLowerCase().includes('search')) {
-            console.log('⚠️ לא הגעתי לדף תוצאות חיפוש!');
-            console.log('🔍 מנסה למצוא תוצאות בדף הנוכחי...');
-        }
-        
-        console.log('🔍 מתחיל חיפוש אלמנטים בדף...');
         
         const developers = await page.evaluate(() => {
             const results = [];
@@ -555,7 +253,6 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
                 });
             }
             
-            // החזרת הנתונים לשרת
             return {
                 cardsCount: cards.length,
                 cards: Array.from(cards).map((card, index) => {
@@ -602,19 +299,11 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
             };
         });
         
-        // לוגים בשרת - עכשיו תראה אותם בטרמינל!
-        console.log(`🔍 נסיון ראשון - אלמנטים סטנדרטיים: ${developers.cardsCount} כרטיסים`);
-        
-        if (developers.cardsCount === 0) {
-            console.log('⚠️ לא נמצאו כרטיסי תוצאות סטנדרטיים!');
-            console.log('🔍 נסיון שני - אלמנטים חלופיים: 0 כרטיסים');
-            console.log('🔍 נסיון שלישי - אלמנטים עם טקסט: 0 כרטיסים');
-        }
+        console.log(`🔍 נמצאו ${developers.cardsCount} כרטיסים`);
         
         // עיבוד התוצאות
         const finalResults = developers.cards || [];
         
-        // לוגים מפורטים לכל כרטיס שנמצא
         console.log(`📊 מתחיל עיבוד ${finalResults.length} כרטיסים...`);
         
         finalResults.forEach((card, index) => {
@@ -622,19 +311,10 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         });
         
         console.log(`✅ עיבוד כרטיסים הושלם!`);
-
         console.log(`✅ חילוץ הושלם! נמצאו ${finalResults.length} תוצאות`);
         
-        // בדיקה אם LinkedIn חסם אותנו
-        if (finalResults.length === 0) {
-            const blockedText = await page.textContent('body');
-            if (blockedText.includes('captcha') || blockedText.includes('verify') || blockedText.includes('blocked')) {
-                console.log('🚨 LinkedIn דורש אימות או חסם אותנו!');
-                await page.screenshot({ path: 'linkedin_blocked.png', fullPage: true });
-                console.log('📸 צילום מסך נשמר: linkedin_blocked.png');
-            }
-        }
-        
+        // המתנה קצרה לפני סגירת הדפדפן
+        await page.waitForTimeout(5000);
         await browser.close();
         
         return {
@@ -652,7 +332,7 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         // אם זה לא הניסיון האחרון, ננסה שוב
         if (retryCount < 2) {
             console.log(`🔄 מנסה שוב... (ניסיון ${retryCount + 2}/3)`);
-            await new Promise(resolve => setTimeout(resolve, 5000)); // המתנה 5 שניות
+            await new Promise(resolve => setTimeout(resolve, 10000)); // המתנה 10 שניות
             return await scrapeLinkedInReal(email, password, searchQuery, maxResults, retryCount + 1);
         }
         
