@@ -472,90 +472,97 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
             console.log('🔍 מנסה למצוא תוצאות בדף הנוכחי...');
         }
         
+        console.log('🔍 מתחיל חיפוש אלמנטים בדף...');
+        
         const developers = await page.evaluate(() => {
             const results = [];
-            console.log('🔍 מתחיל חיפוש אלמנטים בדף...');
             
             // נסיון ראשון - אלמנטים סטנדרטיים
-            console.log('🔍 נסיון ראשון: מחפש אלמנטים סטנדרטיים...');
             let cards = document.querySelectorAll('[data-view-name="search-entity-result-universal-template"]');
-            console.log(`🔍 נסיון ראשון - נמצאו ${cards.length} כרטיסי תוצאות`);
             
             // אם לא נמצאו, נסיון שני - אלמנטים חלופיים
             if (cards.length === 0) {
-                console.log('⚠️ לא נמצאו כרטיסי תוצאות סטנדרטיים!');
-                console.log('🔍 נסיון שני: מחפש אלמנטים חלופיים...');
-                
                 cards = document.querySelectorAll('.search-result__info, .search-result, .result-card');
-                console.log(`🔍 נסיון שני - אלמנטים חלופיים: ${cards.length}`);
             }
             
             // אם עדיין לא נמצאו, נסיון שלישי - כל האלמנטים עם טקסט
             if (cards.length === 0) {
-                console.log('⚠️ לא נמצאו אלמנטים חלופיים!');
-                console.log('🔍 נסיון שלישי: מחפש כל האלמנטים עם טקסט...');
-                
                 const allElements = document.querySelectorAll('div, li, article');
-                console.log(`🔍 סה"כ אלמנטים בדף: ${allElements.length}`);
-                
                 cards = Array.from(allElements).filter(el => {
                     const text = el.innerText || el.textContent || '';
                     return text.length > 20 && text.includes(' ') && !text.includes('LinkedIn');
                 });
-                console.log(`🔍 נסיון שלישי - אלמנטים עם טקסט: ${cards.length}`);
             }
             
-            cards.forEach((card, index) => {
-                try {
-                    const allText = card.innerText || card.textContent || '';
-                    const lines = allText.split('\n').filter(line => line.trim().length > 0);
-                    
-                    console.log(`📝 כרטיס ${index + 1}: ${lines.slice(0, 3).join(' | ')}`);
-                    
-                    if (lines.length >= 2) {
-                        const name = lines[0].trim();
-                        // עכשיו לוקח את כל התפקידים, לא רק תפקידים ספציפיים
-                        const title = lines.find(line => 
-                            line.length > 3 && 
-                            !line.includes('Connect') && 
-                            !line.includes('View') &&
-                            !line.includes('Message') &&
-                            !line.includes('Follow') &&
-                            !line.includes('LinkedIn') &&
-                            !line.includes('Search')
-                        ) || lines[1];
+            // החזרת הנתונים לשרת
+            return {
+                cardsCount: cards.length,
+                cards: Array.from(cards).map((card, index) => {
+                    try {
+                        const allText = card.innerText || card.textContent || '';
+                        const lines = allText.split('\n').filter(line => line.trim().length > 0);
                         
-                        const location = lines.find(line => 
-                            line.includes(',') || 
-                            line.toLowerCase().includes('israel') ||
-                            line.toLowerCase().includes('tel aviv') ||
-                            line.toLowerCase().includes('jerusalem') ||
-                            line.toLowerCase().includes('united states') ||
-                            line.toLowerCase().includes('usa')
-                        ) || 'N/A';
+                        if (lines.length >= 2) {
+                            const name = lines[0].trim();
+                            const title = lines.find(line => 
+                                line.length > 3 && 
+                                !line.includes('Connect') && 
+                                !line.includes('View') &&
+                                !line.includes('Message') &&
+                                !line.includes('Follow') &&
+                                !line.includes('LinkedIn') &&
+                                !line.includes('Search')
+                            ) || lines[1];
+                            
+                            const location = lines.find(line => 
+                                line.includes(',') || 
+                                line.toLowerCase().includes('israel') ||
+                                line.toLowerCase().includes('tel aviv') ||
+                                line.toLowerCase().includes('jerusalem') ||
+                                line.toLowerCase().includes('united states') ||
+                                line.toLowerCase().includes('usa')
+                            ) || 'N/A';
 
-                        if (name && name.length > 2 && !name.includes('Connect') && !name.includes('View') && !name.includes('LinkedIn')) {
-                            results.push({
-                                index: index + 1,
-                                name: name,
-                                title: title || 'N/A',
-                                location: location,
-                                scrapedAt: new Date().toISOString()
-                            });
+                            if (name && name.length > 2 && !name.includes('Connect') && !name.includes('View') && !name.includes('LinkedIn')) {
+                                return {
+                                    index: index + 1,
+                                    name: name,
+                                    title: title || 'N/A',
+                                    location: location,
+                                    scrapedAt: new Date().toISOString()
+                                };
+                            }
                         }
+                    } catch (e) {
+                        // שגיאה תועבר לשרת
                     }
-                } catch (e) {
-                    console.log(`⚠️ שגיאה בפרופיל ${index + 1}:`, e.message);
-                }
-            });
-            
-            return results;
+                    return null;
+                }).filter(Boolean)
+            };
         });
+        
+        // לוגים בשרת - עכשיו תראה אותם בטרמינל!
+        console.log(`🔍 נסיון ראשון - אלמנטים סטנדרטיים: ${developers.cardsCount} כרטיסים`);
+        
+        if (developers.cardsCount === 0) {
+            console.log('⚠️ לא נמצאו כרטיסי תוצאות סטנדרטיים!');
+            console.log('🔍 נסיון שני - אלמנטים חלופיים: 0 כרטיסים');
+            console.log('🔍 נסיון שלישי - אלמנטים עם טקסט: 0 כרטיסים');
+        }
+        
+                // לוגים מפורטים לכל כרטיס שנמצא
+        console.log(`📊 מתחיל עיבוד ${finalResults.length} כרטיסים...`);
+        
+        finalResults.forEach((card, index) => {
+            console.log(`📝 כרטיס ${index + 1}: ${card.name} | ${card.title} | ${card.location}`);
+        });
+        
+        console.log(`✅ עיבוד כרטיסים הושלם!`);
 
-        console.log(`✅ חילוץ הושלם! נמצאו ${developers.length} תוצאות`);
+        console.log(`✅ חילוץ הושלם! נמצאו ${finalResults.length} תוצאות`);
         
         // בדיקה אם LinkedIn חסם אותנו
-        if (developers.length === 0) {
+        if (finalResults.length === 0) {
             const pageText = await page.textContent('body');
             if (pageText.includes('captcha') || pageText.includes('verify') || pageText.includes('blocked')) {
                 console.log('🚨 LinkedIn דורש אימות או חסם אותנו!');
@@ -568,8 +575,8 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         
         return {
             success: true,
-            totalResults: developers.length,
-            developers: developers.slice(0, maxResults),
+            totalResults: finalResults.length,
+            developers: finalResults.slice(0, maxResults),
             scrapedAt: new Date().toISOString(),
             retryCount: retryCount
         };
