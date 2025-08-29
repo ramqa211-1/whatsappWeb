@@ -249,7 +249,9 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--disable-gpu'
+            '--disable-gpu',
+            '--disable-web-security',
+            '--disable-features=VizDisplayCompositor'
         ]
     });
 
@@ -284,7 +286,7 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         // התחברות ל-LinkedIn
         console.log('🌐 מגיע לעמוד לוגין של LinkedIn...');
         await page.goto('https://www.linkedin.com/login', { 
-            waitUntil: 'domcontentloaded', // רק DOM, לא כל הדף
+            waitUntil: 'domcontentloaded',
             timeout: 60000 
         });
         console.log('✅ הגעתי לעמוד לוגין של LinkedIn');
@@ -309,6 +311,38 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         console.log('⏳ ממתין 5 שניות נוספות לטעינת הדף הראשי...');
         await page.waitForTimeout(5000);
         console.log('✅ המתנה לטעינת הדף הראשי הושלמה');
+        
+        // בדיקה שהדף נטען נכון אחרי לוגין
+        console.log('🔍 בודק מצב הדף אחרי לוגין...');
+        const currentUrl = page.url();
+        const currentTitle = await page.title();
+        console.log(`📍 URL נוכחי: ${currentUrl}`);
+        console.log(`📄 כותרת נוכחית: ${currentTitle}`);
+        
+        // בדיקה אם LinkedIn דורש אימות נוסף
+        const bodyText = await page.textContent('body');
+        if (bodyText.includes('captcha') || bodyText.includes('verify') || bodyText.includes('checkpoint')) {
+            console.log('🚨 LinkedIn דורש אימות נוסף!');
+            await page.screenshot({ path: 'linkedin_verification.png', fullPage: true });
+            console.log('📸 צילום מסך של דף האימות נשמר');
+            throw new Error('LinkedIn דורש אימות נוסף - לא ניתן להמשיך');
+        }
+        
+        // בדיקה אם אנחנו בדף הראשי או בדף אחר
+        if (currentUrl.includes('chrome-error://') || currentUrl.includes('data:') || currentUrl === 'about:blank') {
+            console.log('⚠️ הדף לא נטען נכון - מנסה לנווט לדף הראשי...');
+            try {
+                await page.goto('https://www.linkedin.com/feed/', { 
+                    waitUntil: 'domcontentloaded',
+                    timeout: 30000 
+                });
+                console.log('✅ ניווט לדף הראשי הושלם');
+                await page.waitForTimeout(5000);
+            } catch (navError) {
+                console.log('❌ שגיאה בניווט לדף הראשי:', navError.message);
+                throw new Error('לא ניתן לנווט לדף הראשי אחרי לוגין');
+            }
+        }
         
         // פעולות רנדומליות כדי להיראות כמו משתמש אמיתי
         console.log('🎲 מבצע פעולה רנדומלית כדי להיראות כמו משתמש אמיתי...');
@@ -383,30 +417,57 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
             console.log('🔍 נסיון שני: נווט ישיר ל-URL חיפוש...');
             console.log(`⚠️ הסיבה לכישלון נסיון ראשון: ${error.message}`);
             
+            // בדיקה שהדף נטען נכון לפני ניסיון הניווט
+            const currentUrl = page.url();
+            if (currentUrl.includes('chrome-error://') || currentUrl.includes('data:') || currentUrl === 'about:blank') {
+                console.log('⚠️ הדף לא נטען נכון - מנסה לנווט לדף הראשי קודם...');
+                try {
+                    await page.goto('https://www.linkedin.com/feed/', { 
+                        waitUntil: 'domcontentloaded',
+                        timeout: 30000 
+                    });
+                    console.log('✅ ניווט לדף הראשי הושלם');
+                    await page.waitForTimeout(5000);
+                } catch (navError) {
+                    console.log('❌ שגיאה בניווט לדף הראשי:', navError.message);
+                    throw new Error('לא ניתן לנווט לדף הראשי');
+                }
+            }
+            
             const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodeURIComponent(searchQuery)}`;
             console.log(`🌐 נווט ל-URL חיפוש: ${searchUrl}`);
             
-            // נסיון עם waitUntil: 'networkidle' במקום 'domcontentloaded'
+            // נסיון עם waitUntil: 'domcontentloaded' בלבד
             try {
-                console.log('🔍 נסיון עם networkidle...');
+                console.log('🔍 נסיון עם domcontentloaded...');
                 await page.goto(searchUrl, { 
-                    waitUntil: 'networkidle',
+                    waitUntil: 'domcontentloaded',
                     timeout: 60000 
                 });
-                console.log('✅ הגעתי לעמוד תוצאות החיפוש עם networkidle');
+                console.log('✅ הגעתי לעמוד תוצאות החיפוש עם domcontentloaded');
             } catch (redirectError) {
-                console.log('⚠️ networkidle נכשל:', redirectError.message);
-                console.log('🔍 נסיון עם domcontentloaded...');
+                console.log('❌ שגיאת redirects:', redirectError.message);
                 
+                // נסיון עם גישה הדרגתית
+                console.log('🔍 מנסה גישה הדרגתית...');
                 try {
+                    // קודם לדף הראשי
+                    await page.goto('https://www.linkedin.com/', { 
+                        waitUntil: 'domcontentloaded',
+                        timeout: 30000 
+                    });
+                    console.log('✅ הגעתי לדף הראשי');
+                    await page.waitForTimeout(3000);
+                    
+                    // עכשיו לחיפוש
                     await page.goto(searchUrl, { 
                         waitUntil: 'domcontentloaded',
-                        timeout: 60000 
+                        timeout: 30000 
                     });
-                    console.log('✅ הגעתי לעמוד תוצאות החיפוש עם domcontentloaded');
-                } catch (domError) {
-                    console.log('❌ גם domcontentloaded נכשל:', domError.message);
-                    throw domError;
+                    console.log('✅ הגעתי לעמוד החיפוש אחרי גישה הדרגתית');
+                } catch (gradientError) {
+                    console.log('❌ גם הגישה ההדרגתית נכשלה:', gradientError.message);
+                    throw gradientError;
                 }
             }
         }
@@ -461,13 +522,13 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         console.log('📊 מתחיל חילוץ נתונים מהדף...');
         
         // בדיקה נוספת של הדף לפני חילוץ
-        const currentUrl = page.url();
-        const currentTitle = await page.title();
-        console.log(`📍 URL נוכחי לפני חילוץ: ${currentUrl}`);
-        console.log(`📄 כותרת נוכחית לפני חילוץ: ${currentTitle}`);
+        const finalUrl = page.url();
+        const finalTitle = await page.title();
+        console.log(`📍 URL נוכחי לפני חילוץ: ${finalUrl}`);
+        console.log(`📄 כותרת נוכחית לפני חילוץ: ${finalTitle}`);
         
         // בדיקה אם אנחנו בדף תוצאות חיפוש
-        if (!currentUrl.includes('search/results') && !currentTitle.toLowerCase().includes('search')) {
+        if (!finalUrl.includes('search/results') && !finalTitle.toLowerCase().includes('search')) {
             console.log('⚠️ לא הגעתי לדף תוצאות חיפוש!');
             console.log('🔍 מנסה למצוא תוצאות בדף הנוכחי...');
         }
@@ -550,7 +611,10 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
             console.log('🔍 נסיון שלישי - אלמנטים עם טקסט: 0 כרטיסים');
         }
         
-                // לוגים מפורטים לכל כרטיס שנמצא
+        // עיבוד התוצאות
+        const finalResults = developers.cards || [];
+        
+        // לוגים מפורטים לכל כרטיס שנמצא
         console.log(`📊 מתחיל עיבוד ${finalResults.length} כרטיסים...`);
         
         finalResults.forEach((card, index) => {
@@ -563,8 +627,8 @@ async function scrapeLinkedInReal(email, password, searchQuery = 'Python Develop
         
         // בדיקה אם LinkedIn חסם אותנו
         if (finalResults.length === 0) {
-            const pageText = await page.textContent('body');
-            if (pageText.includes('captcha') || pageText.includes('verify') || pageText.includes('blocked')) {
+            const blockedText = await page.textContent('body');
+            if (blockedText.includes('captcha') || blockedText.includes('verify') || blockedText.includes('blocked')) {
                 console.log('🚨 LinkedIn דורש אימות או חסם אותנו!');
                 await page.screenshot({ path: 'linkedin_blocked.png', fullPage: true });
                 console.log('📸 צילום מסך נשמר: linkedin_blocked.png');
